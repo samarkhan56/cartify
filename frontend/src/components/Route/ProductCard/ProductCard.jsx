@@ -24,8 +24,6 @@ const ProductCard = ({ data, isEvent }) => {
     const [open, setOpen] = useState(false);
     const dispatch = useDispatch();
 
-
-
     useEffect(() => {
         if (wishlist && wishlist.find((i) => i._id === data._id)) {
             setClick(true);
@@ -34,19 +32,16 @@ const ProductCard = ({ data, isEvent }) => {
         }
     }, [wishlist]);
 
-    // Remove from wish list 
     const removeFromWishlistHandler = (data) => {
         setClick(!click);
         dispatch(removeFromWishlist(data));
     }
 
-    // add to wish list
     const addToWishlistHandler = (data) => {
         setClick(!click);
         dispatch(addToWishlist(data))
     }
 
-    // Add to cart
     const addToCartHandler = (id) => {
         const isItemExists = cart && cart.find((i) => i._id === id);
 
@@ -63,88 +58,123 @@ const ProductCard = ({ data, isEvent }) => {
         }
     }
 
+    // Calculate discount percentage
+    const discountPercentage = data.originalPrice > data.discountPrice 
+        ? Math.round(((data.originalPrice - data.discountPrice) / data.originalPrice) * 100)
+        : 0;
 
     return (
         <>
-            <div className='w-full h-[370px] bg-white rounded-lg shadow-sm p-3 relative cursor-pointer'>
-                <div className='flex justify-end'>
-                </div>
+            <div className='group w-full bg-card rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-border-gray/50 relative'>
+                {/* Discount Badge */}
+                {discountPercentage > 0 && (
+                    <div className='absolute top-2 left-2 z-10 bg-gradient-to-r from-brand-orange to-orange-hover text-light-text text-xs font-bold px-2 py-1 rounded-full'>
+                        -{discountPercentage}%
+                    </div>
+                )}
+                
+                {/* Sold Out Badge */}
+                {data.stock === 0 && (
+                    <div className='absolute top-2 left-2 z-10 bg-red-500 text-light-text text-xs font-bold px-2 py-1 rounded-full'>
+                        Sold Out
+                    </div>
+                )}
 
+                {/* Image Container */}
                 <Link to={`${isEvent === true ? `/product/${data._id}?isEvent=true` : `/product/${data._id}`}`}>
-                    <img
-                        src={`${backend_url}${data.images && data.images[0]}`}
-                        alt="prd"
-                        className='w-full h-[170px] object-contain'
-                    />
+                    <div className='relative h-48 bg-gradient-to-br from-gray-50 to-gray-100 overflow-hidden'>
+                        <img
+                            src={`${backend_url}${data.images && data.images[0]}`}
+                            alt={data.name}
+                            className='w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-110'
+                        />
+                        {/* Image Overlay */}
+                        <div className='absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300'></div>
+                    </div>
                 </Link>
-                <Link to={`${isEvent === true ? `/product/${data._id}?isEvent=true` : `/product/${data._id}`}`}>
-                    <h5 className={`${styles.shop_name}`} >{data.shop.name}</h5>
-                </Link>
-                <Link to={`/product/${data._id}`}>
-                    <h4 className='pb-3 font-[500]'>
-                        {data.name.length > 40 ? data.name.slice(0, 40) + '...' : data.name}
-                    </h4>
-                    {/* Star Rating */}
-                    <div className='flex'>
+
+                {/* Content */}
+                <div className='p-4'>
+                    {/* Shop Name */}
+                    <Link to={`${isEvent === true ? `/product/${data._id}?isEvent=true` : `/product/${data._id}`}`}>
+                        <h5 className='text-xs text-brand-orange font-medium mb-1 hover:underline'>
+                            {data.shop.name}
+                        </h5>
+                    </Link>
+                    
+                    {/* Product Name */}
+                    <Link to={`/product/${data._id}`}>
+                        <h4 className='font-semibold text-text-primary text-sm md:text-base mb-2 line-clamp-2 min-h-[40px] group-hover:text-brand-orange transition-colors'>
+                            {data.name.length > 45 ? data.name.slice(0, 45) + '...' : data.name}
+                        </h4>
+                    </Link>
+
+                    {/* Rating */}
+                    <div className='flex items-center gap-1 mb-2'>
                         <Ratings rating={data?.ratings} />
+                        <span className='text-xs text-text-secondary'>({data?.ratings?.length || 0})</span>
                     </div>
 
-                    <div className='py-2 flex items-center justify-between'>
-                        <div className='flex'>
-                            <h5 className={`${styles.productDiscountPrice}`}>
-                                {data.originalPrice === 0 ? data.originalPrice : data.discountPrice}$
+                    {/* Price Section */}
+                    <div className='flex items-center justify-between'>
+                        <div className='flex items-center gap-2'>
+                            <h5 className='text-lg font-bold text-brand-orange'>
+                                ${data.discountPrice}
                             </h5>
-
-                            <h4 className={`${styles.price}`}>
-                                {data.originalPrice ? data.originalPrice + " $" : null}
-                            </h4>
+                            {data.originalPrice > data.discountPrice && (
+                                <h4 className='text-sm text-text-secondary line-through'>
+                                    ${data.originalPrice}
+                                </h4>
+                            )}
                         </div>
-
-                        <span className="font-[400] text-[17px] text-[#68d284]">
-                            {data?.sold_out} sold
+                        <span className="text-xs font-medium text-success">
+                            {data?.sold_out || 0} sold
                         </span>
                     </div>
-                </Link>
 
-                {/* side option */}
-                <div>
-                    {
-                        click ? (
-                            <AiFillHeart
-                                size={22}
-                                className="cursor-pointer absolute right-2 top-5"
-                                onClick={() => removeFromWishlistHandler(data)}
-                                color={click ? "red" : "#333"}
-                                title='Remove from wishlist'
-                            />
-                        ) : (
-                            <AiOutlineHeart
-                                size={22}
-                                className="cursor-pointer absolute right-2 top-5"
-                                onClick={() => addToWishlistHandler(data)}
-                                color={click ? "red" : "#333"}
-                                title='Add to wishlist'
+                    {/* Action Buttons */}
+                    <div className='flex items-center justify-between gap-2 mt-3 pt-3 border-t border-border-gray'>
+                        {/* Add to Cart Button */}
+                        <button
+                            onClick={() => addToCartHandler(data._id)}
+                            disabled={data.stock === 0}
+                            className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg transition-all duration-300 text-sm font-medium ${
+                                data.stock === 0
+                                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                    : 'bg-brand-orange/10 text-brand-orange hover:bg-brand-orange hover:text-light-text hover:scale-105'
+                            }`}
+                        >
+                            <AiOutlineShoppingCart size={16} />
+                            <span>{data.stock === 0 ? 'Out of Stock' : 'Add to Cart'}</span>
+                        </button>
 
-                            />
-                        )}
-                    <AiOutlineEye
-                        size={22}
-                        className="cursor-pointer absolute right-2 top-14"
-                        onClick={() => setOpen(!open)}
-                        color="#333"
-                        title='Quick view'
-                    />
+                        {/* Wishlist Button */}
+                        <button
+                            onClick={() => click ? removeFromWishlistHandler(data) : addToWishlistHandler(data)}
+                            className='w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-red-50 transition-all duration-300'
+                            title={click ? 'Remove from wishlist' : 'Add to wishlist'}
+                        >
+                            {click ? (
+                                <AiFillHeart size={18} className="text-red-500" />
+                            ) : (
+                                <AiOutlineHeart size={18} className="text-text-secondary hover:text-red-500" />
+                            )}
+                        </button>
 
-                    <AiOutlineShoppingCart
-                        size={25}
-                        className="cursor-pointer absolute right-2 top-24"
-                        onClick={() => addToCartHandler(data._id)}
-                        color="#444"
-                        title='Add to cart'
-                    />
-                    {open ? <ProductDetailsCard setOpen={setOpen} data={data} /> : null}
+                        {/* Quick View Button */}
+                        <button
+                            onClick={() => setOpen(!open)}
+                            className='w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-brand-orange/10 transition-all duration-300'
+                            title='Quick view'
+                        >
+                            <AiOutlineEye size={18} className="text-text-secondary hover:text-brand-orange" />
+                        </button>
+                    </div>
                 </div>
             </div>
+
+            {/* Quick View Modal */}
+            {open ? <ProductDetailsCard setOpen={setOpen} data={data} /> : null}
         </>
     )
 }
