@@ -6,6 +6,14 @@ import {
   AiOutlineHeart,
   AiOutlineMessage,
   AiOutlineShoppingCart,
+  AiOutlineMinus,
+  AiOutlinePlus,
+  AiFillStar,
+  AiOutlineStar,
+  AiOutlineCar,
+  AiOutlineReload,
+  AiOutlineSafetyCertificate,
+  AiOutlineCheckCircle,
 } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllProductsShop } from "../../redux/actions/product";
@@ -40,38 +48,39 @@ const ProductDetails = ({ data }) => {
     }
   }, [data, wishlist]);
 
-  // Remove from wish list
   const removeFromWishlistHandler = (data) => {
     setClick(!click);
     dispatch(removeFromWishlist(data));
   };
 
-  // add to wish list
   const addToWishlistHandler = (data) => {
     setClick(!click);
     dispatch(addToWishlist(data));
   };
 
-  // Add to cart
   const addToCartHandler = (id) => {
     const isItemExists = cart && cart.find((i) => i._id === id);
-
     if (isItemExists) {
-      toast.error("item already in cart!");
+      toast.error("Item already in cart!");
     } else {
       if (data.stock < 1) {
         toast.error("Product stock limited!");
       } else {
         const cartData = { ...data, qty: count };
         dispatch(addTocart(cartData));
-        toast.success("Item added to cart Successfully!");
+        toast.success("Item added to cart successfully!");
       }
     }
   };
 
   const incrementCount = () => {
-    setCount(count + 1);
+    if (count < data.stock) {
+      setCount(count + 1);
+    } else {
+      toast.error("Not enough stock!");
+    }
   };
+  
   const decrementCount = () => {
     if (count > 1) {
       setCount(count - 1);
@@ -91,10 +100,8 @@ const ProductDetails = ({ data }) => {
     );
 
   const avg = totalRatings / totalReviewsLength || 0;
-
   const averageRating = avg.toFixed(2);
 
-  // Sand message
   const handleMessageSubmit = async () => {
     if (isAuthenticated) {
       const groupTitle = data._id + user._id;
@@ -117,156 +124,200 @@ const ProductDetails = ({ data }) => {
     }
   };
 
+  const discountPercentage = data?.originalPrice > data?.discountPrice 
+    ? Math.round(((data.originalPrice - data.discountPrice) / data.originalPrice) * 100)
+    : 0;
+
   return (
-    <div className="bg-white">
+    <div className="bg-background min-h-screen py-8">
       {data ? (
-        <div className={`${styles.section} w-[90%] 800px:w-[80%] `}>
-          <div className="w-full py-5">
-            <div className="block w-full 800px:flex">
-              <div className="w-full 800px:w-[50%]">
-                <img
-                  src={`${backend_url}${data && data.images[select]}`}
-                  alt=""
-                  className="w-[80%]"
-                />
-                <div className="w-full flex">
-                  {data &&
-                    data.images.map((i, index) => (
-                      <div
-                        className={`${
-                          select === 0 ? "border" : "null"
-                        } cursor-pointer`}
-                      >
-                        <img
-                          src={`${backend_url}${i}`}
-                          alt=""
-                          className="h-[200px] overflow-hidden mr-3 mt-3"
-                          onClick={() => setSelect(index)}
-                        />
-                      </div>
-                    ))}
-                  <div
-                    className={`${
-                      select === 1 ? "border" : "null"
-                    } cursor-pointer `}
-                  >
-                    {/* <img
-                                            src={data?.image_Url[1].url}
-                                            alt="img"
-                                            className="h-[200px]"
-                                            onClick={() => setSelect(1)}
-                                        /> */}
-                  </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Back Button */}
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-text-secondary hover:text-brand-orange transition-colors mb-6"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Products
+          </button>
+
+          <div className="bg-card rounded-2xl shadow-lg overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-8">
+              {/* Left - Image Gallery */}
+              <div>
+                {/* Main Image */}
+                <div className="bg-gray-50 rounded-xl overflow-hidden mb-4">
+                  <img
+                    src={`${backend_url}${data.images[select]}`}
+                    alt={data.name}
+                    className="w-full h-[300px] lg:h-[400px] object-contain p-4"
+                  />
+                </div>
+                {/* Thumbnails */}
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {data.images.map((img, index) => (
+                    <div
+                      key={index}
+                      className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+                        select === index ? "border-brand-orange" : "border-transparent"
+                      }`}
+                      onClick={() => setSelect(index)}
+                    >
+                      <img
+                        src={`${backend_url}${img}`}
+                        alt=""
+                        className="w-20 h-20 object-cover"
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
-              {/* Rtght */}
-              <div className="w-full 800px:w-[50%] pt-5 ">
-                <h1 className={`${styles.productTitle}`}>{data.name}</h1>
-                <p>{data.description}</p>
-                <div className="flex pt-3">
-                  <h4 className={`${styles.productDiscountPrice}`}>
-                    {data.discountPrice}$
-                  </h4>
-                  <h3 className={`${styles.price}`}>
-                    {data.originalPrice ? data.originalPrice + "$" : null}
-                  </h3>
-                </div>
 
-                {/* inc dec option */}
-                <div className="flex items-center mt-12 justify-between pr-3">
-                  <div>
-                    <button
-                      className="bg-gradient-to-r from-teal-400 to-teal-500 text-white font-bold rounded-l px-4 py-2 shadow-lg hover:opacity-75 transition duration-300 ease-in-out"
-                      onClick={decrementCount}
-                    >
-                      -
-                    </button>
-
-                    <span className="bg-gray-200 text-gray-800 font-medium px-4 py-[11px]">
-                      {count}
-                    </span>
-
-                    <button
-                      className="bg-gradient-to-r from-teal-400 to-teal-500 text-white font-bold rounded-l px-4 py-2 shadow-lg hover:opacity-75 transition duration-300 ease-in-out"
-                      onClick={incrementCount}
-                    >
-                      +
-                    </button>
+              {/* Right - Product Info */}
+              <div className="flex flex-col">
+                {/* Discount Badge */}
+                {discountPercentage > 0 && (
+                  <div className="inline-flex items-center gap-1 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full w-fit mb-3">
+                    <AiFillStar size={12} />
+                    <span>-{discountPercentage}% OFF</span>
                   </div>
+                )}
 
-                  <div>
-                    {click ? (
-                      <AiFillHeart
-                        size={30}
-                        className="cursor-pointer"
-                        onClick={() => removeFromWishlistHandler(data)}
-                        color={click ? "red" : "#333"}
-                        title="Remove from wishlist"
-                      />
-                    ) : (
-                      <AiOutlineHeart
-                        size={30}
-                        className="cursor-pointer"
-                        onClick={() => addToWishlistHandler(data)}
-                        title="Add to wishlist"
-                      />
-                    )}
-                  </div>
-                </div>
-                <div
-                  className={`${styles.button} !mt-6 !rounded !h-11 flex items-center`}
-                  onClick={() => addToCartHandler(data._id)}
-                >
-                  <span className="text-white flex items-center">
-                    Add to Cart <AiOutlineShoppingCart className="ml-1" />
+                {/* Title */}
+                <h1 className="text-2xl lg:text-3xl font-bold text-text-primary mb-3">
+                  {data.name}
+                </h1>
+
+                {/* Rating */}
+                <div className="flex items-center gap-3 mb-4">
+                  <Ratings rating={data?.ratings} />
+                  <span className="text-text-secondary text-sm">
+                    ({data?.reviews?.length || 0} reviews)
                   </span>
                 </div>
-                <div className="flex items-center pt-8">
-                  <Link to={`/shop/preview/${data?.shop._id}`}>
-                    <img
-                      src={`${backend_url}${data?.shop?.avatar}`}
-                      alt=""
-                      className="w-[50px] h-[50px] rounded-full mr-2"
-                    />
-                  </Link>
 
-                  <div className="pr-8">
-                    <Link to={`/shop/preview/${data?.shop._id}`}>
-                      <h3
-                        className={`${styles.shop_name} pb-1 pt-1 cursor-pointer`}
-                      >
-                        {data.shop.name}
-                      </h3>
-                    </Link>
-                    <h5 className="pb-3 text-[15px]">
-                      {" "}
-                      ({averageRating}/5) Ratingss
-                    </h5>
-                  </div>
-
-                  <div
-                    className={`${styles.button} bg-[#6443d1] mt-4 !rounded !h-11`}
-                    onClick={handleMessageSubmit}
-                  >
-                    <span className="text-white flex items-center">
-                      Send Message <AiOutlineMessage className="ml-1" />
+                {/* Price */}
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-3xl font-bold text-brand-orange">
+                    ${data.discountPrice}
+                  </span>
+                  {data.originalPrice > data.discountPrice && (
+                    <span className="text-lg text-text-secondary line-through">
+                      ${data.originalPrice}
                     </span>
+                  )}
+                  <span className="text-sm text-success font-medium">
+                    In Stock: {data.stock} units
+                  </span>
+                </div>
+
+                {/* Description */}
+                <p className="text-text-secondary mb-6 leading-relaxed">
+                  {data.description}
+                </p>
+
+                {/* Quantity Selector */}
+                <div className="flex items-center gap-4 mb-6">
+                  <span className="text-text-primary font-medium">Quantity:</span>
+                  <div className="flex items-center border border-border-gray rounded-lg">
+                    <button
+                      onClick={decrementCount}
+                      className="px-3 py-2 hover:bg-gray-100 transition-colors"
+                    >
+                      <AiOutlineMinus size={16} />
+                    </button>
+                    <span className="px-4 py-2 text-text-primary min-w-[50px] text-center">
+                      {count}
+                    </span>
+                    <button
+                      onClick={incrementCount}
+                      className="px-3 py-2 hover:bg-gray-100 transition-colors"
+                    >
+                      <AiOutlinePlus size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                  <button
+                    onClick={() => addToCartHandler(data._id)}
+                    className="flex-1 bg-brand-orange hover:bg-orange-hover text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+                  >
+                    <AiOutlineShoppingCart size={20} />
+                    Add to Cart
+                  </button>
+                  <button
+                    onClick={() => click ? removeFromWishlistHandler(data) : addToWishlistHandler(data)}
+                    className="px-6 py-3 rounded-lg font-semibold transition-all duration-300 border-2 border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white flex items-center justify-center gap-2"
+                  >
+                    {click ? <AiFillHeart size={20} /> : <AiOutlineHeart size={20} />}
+                    {click ? "Added to Wishlist" : "Add to Wishlist"}
+                  </button>
+                </div>
+
+                {/* Seller Info */}
+                <div className="border-t border-border-gray pt-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <Link to={`/shop/preview/${data?.shop._id}`}>
+                      <img
+                        src={`${backend_url}${data?.shop?.avatar}`}
+                        alt=""
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    </Link>
+                    <div>
+                      <Link to={`/shop/preview/${data?.shop._id}`}>
+                        <h3 className="font-semibold text-text-primary hover:text-brand-orange transition-colors">
+                          {data.shop.name}
+                        </h3>
+                      </Link>
+                      <div className="flex items-center gap-1">
+                        <AiFillStar className="text-yellow-400" size={14} />
+                        <span className="text-sm text-text-secondary">{averageRating} Seller Rating</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleMessageSubmit}
+                      className="ml-auto flex items-center gap-2 text-brand-orange hover:text-orange-hover transition-colors"
+                    >
+                      <AiOutlineMessage size={20} />
+                      <span className="text-sm">Contact Seller</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Shipping Info */}
+                <div className="grid grid-cols-3 gap-3 mt-6 pt-6 border-t border-border-gray">
+                  <div className="text-center">
+                    <AiOutlineCar size={24} className="mx-auto text-brand-orange mb-2" />
+                    <p className="text-xs text-text-primary font-medium">Free Shipping</p>
+                    <p className="text-xs text-text-secondary">On orders $100+</p>
+                  </div>
+                  <div className="text-center">
+                    <AiOutlineReload size={24} className="mx-auto text-brand-orange mb-2" />
+                    <p className="text-xs text-text-primary font-medium">30 Days Return</p>
+                    <p className="text-xs text-text-secondary">Easy returns</p>
+                  </div>
+                  <div className="text-center">
+                    <AiOutlineSafetyCertificate size={24} className="mx-auto text-brand-orange mb-2" />
+                    <p className="text-xs text-text-primary font-medium">Secure Checkout</p>
+                    <p className="text-xs text-text-secondary">100% protected</p>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Product Details Tabs */}
+            <ProductDetailsInfo
+              data={data}
+              products={products}
+              totalReviewsLength={totalReviewsLength}
+              averageRating={averageRating}
+            />
           </div>
-
-          {/* Product Details  info */}
-
-          <ProductDetailsInfo
-            data={data}
-            products={products}
-            totalReviewsLength={totalReviewsLength}
-            averageRating={averageRating}
-          />
-          <br />
-          <br />
         </div>
       ) : null}
     </div>
@@ -282,145 +333,112 @@ const ProductDetailsInfo = ({
   const [active, setActive] = useState(1);
 
   return (
-    <div className="bg-[#f5f6fb] px-3 800px:px-10 py-2 rounded">
-      <div className="w-full flex justify-between border-b pt-10 pb-2">
-        <div className="relative">
-          <h5
-            className={
-              "text-[#000] text-[18px] px-1 leading-5 font-[600] cursor-pointer 800px:text-[20px]"
-            }
-            onClick={() => setActive(1)}
+    <div className="bg-gray-50 rounded-xl m-6 p-6">
+      {/* Tab Headers */}
+      <div className="flex flex-wrap gap-6 border-b border-border-gray pb-3">
+        {["Product Details", "Customer Reviews", "Seller Information"].map((tab, index) => (
+          <button
+            key={index}
+            className={`relative pb-2 text-base font-medium transition-colors ${
+              active === index + 1
+                ? "text-brand-orange"
+                : "text-text-secondary hover:text-text-primary"
+            }`}
+            onClick={() => setActive(index + 1)}
           >
-            Product Details
-          </h5>
-          {active === 1 ? (
-            <div className={`${styles.active_indicator}`} />
-          ) : null}
-        </div>
-
-        <div className="relative">
-          <h5
-            className={
-              "text-[#000] text-[18px] px-1 leading-5 font-[600] cursor-pointer 800px:text-[20px]"
-            }
-            onClick={() => setActive(2)}
-          >
-            Product Reviews
-          </h5>
-          {active === 2 ? (
-            <div className={`${styles.active_indicator}`} />
-          ) : null}
-        </div>
-
-        <div className="relative">
-          <h5
-            className={
-              "text-[#000] text-[18px] px-1 leading-5 font-[600] cursor-pointer 800px:text-[20px]"
-            }
-            onClick={() => setActive(3)}
-          >
-            Seller Information
-          </h5>
-          {active === 3 ? (
-            <div className={`${styles.active_indicator}`} />
-          ) : null}
-        </div>
+            {tab}
+            {active === index + 1 && (
+              <span className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-orange rounded-full"></span>
+            )}
+          </button>
+        ))}
       </div>
 
-      {active === 1 ? (
-        <>
-          <p className="py-2 text-[18px] leading-8 pb-10 whitespace-pre-line  ">
+      {/* Tab Content - Product Details */}
+      {active === 1 && (
+        <div className="py-6">
+          <h3 className="font-semibold text-text-primary mb-3">Product Description</h3>
+          <p className="text-text-secondary leading-relaxed whitespace-pre-line">
             {data.description}
           </p>
-        </>
-      ) : null}
-
-      {/* Product Rev */}
-      {active === 2 ? (
-        <div className="w-full min-h-[40vh] flex flex-col items-center py-3 overflow-y-scroll">
-          {data &&
-            data.reviews.map((item, index) => (
-              <div className="w-full flex my-2">
-                <img
-                  src={`${backend_url}/${item.user.avatar}`}
-                  alt=""
-                  className="w-[50px] h-[50px] rounded-full"
-                />
-                <div className="pl-2 ">
-                  <div className="w-full flex items-center">
-                    <h1 className="font-[500] mr-3">{item.user.name}</h1>
-                    <Ratings rating={data?.ratings} />
-                  </div>
-                  <p>{item.comment}</p>
-                </div>
-              </div>
-            ))}
-
-          <div className="w-full flex justify-center">
-            {data && data.reviews.length === 0 && (
-              <h5>No Reviews have for this product!</h5>
-            )}
-          </div>
         </div>
-      ) : null}
+      )}
 
-      {active === 3 ? (
-        <>
-          <div className="w-full block 800px:flex p-5 ">
-            <div className="w-full 800px:w-[50%]">
-              <div className="flex items-center">
-                <Link to={`/shop/preview/${data.shop._id}`}>
-                  <div className="flex items-center">
-                    <img
-                      src={`${backend_url}${data?.shop?.avatar}`}
-                      className="w-[50px] h-[50px] rounded-full"
-                      alt=""
-                    />
-                    <div className="pl-3">
-                      <h3 className={`${styles.shop_name}`}>
-                        {data.shop.name}
-                      </h3>
-                      <h5 className="pb-3 text-[15px]">
-                        ({averageRating}/5) Ratings
-                      </h5>
+      {/* Tab Content - Reviews */}
+      {active === 2 && (
+        <div className="py-6">
+          <h3 className="font-semibold text-text-primary mb-4">Customer Reviews</h3>
+          {data.reviews && data.reviews.length > 0 ? (
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+              {data.reviews.map((item, index) => (
+                <div key={index} className="flex gap-3 p-4 bg-white rounded-lg">
+                  <img
+                    src={`${backend_url}/${item.user.avatar}`}
+                    alt=""
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium text-text-primary">{item.user.name}</span>
+                      <Ratings rating={item.rating} />
                     </div>
+                    <p className="text-text-secondary text-sm">{item.comment}</p>
                   </div>
-                </Link>
-              </div>
-
-              <p className="pt-2">{data.shop.description}</p>
+                </div>
+              ))}
             </div>
+          ) : (
+            <div className="text-center py-8">
+              <AiOutlineMessage size={48} className="mx-auto text-gray-300 mb-3" />
+              <p className="text-text-secondary">No reviews yet for this product</p>
+              <p className="text-sm text-text-secondary">Be the first to review!</p>
+            </div>
+          )}
+        </div>
+      )}
 
-            <div className="w-full 800px:w-[50%] mt-5 800px:mt-0 800px:flex flex-col items-end">
-              <div className="text-left">
-                <h5 className="font-[600]">
-                  Joined on:{" "}
-                  <span className="font-[500]">
-                    {data.shop?.createdAt?.slice(0, 10)}
-                  </span>
-                </h5>
-                <h5 className="font-[600] pt-3">
-                  Total Products:{" "}
-                  <span className="font-[500]">
-                    {products && products.length}
-                  </span>
-                </h5>
-                <h5 className="font-[600] pt-3">
-                  Total Reviews:{" "}
-                  <span className="font-[500]">{totalReviewsLength}</span>
-                </h5>
-                <Link to="/">
-                  <div
-                    className={`${styles.button} !rounded-[4px] !h-[39.5px] mt-3`}
-                  >
-                    <h4 className="text-white">Visit Shop</h4>
-                  </div>
-                </Link>
+      {/* Tab Content - Seller Info */}
+      {active === 3 && (
+        <div className="py-6">
+          <div className="flex items-center gap-4 mb-6">
+            <img
+              src={`${backend_url}${data?.shop?.avatar}`}
+              className="w-16 h-16 rounded-full object-cover"
+              alt=""
+            />
+            <div>
+              <h3 className="font-semibold text-text-primary text-lg">{data.shop.name}</h3>
+              <div className="flex items-center gap-1">
+                <AiFillStar className="text-yellow-400" size={16} />
+                <span className="text-text-secondary">{averageRating} out of 5</span>
               </div>
             </div>
           </div>
-        </>
-      ) : null}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <AiOutlineCheckCircle className="text-success" />
+              <span className="text-text-secondary">Joined: {data.shop?.createdAt?.slice(0, 10)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <AiOutlineCheckCircle className="text-success" />
+              <span className="text-text-secondary">Total Products: {products?.length || 0}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <AiOutlineCheckCircle className="text-success" />
+              <span className="text-text-secondary">Total Reviews: {totalReviewsLength}</span>
+            </div>
+          </div>
+          
+          <p className="text-text-secondary leading-relaxed">{data.shop.description}</p>
+          
+          <Link to={`/shop/preview/${data.shop._id}`}>
+            <button className="mt-6 bg-brand-orange hover:bg-orange-hover text-white px-6 py-2 rounded-lg transition-all duration-300">
+              Visit Shop
+            </button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 };
