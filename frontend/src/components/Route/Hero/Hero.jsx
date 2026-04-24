@@ -21,7 +21,7 @@ const Hero = () => {
             <div className={`${styles.section} w-[90%] 800px:w-[60%] relative z-10`}>
                 {/* Badge */}
                 <div className="inline-block bg-brand-orange/20 backdrop-blur-sm rounded-full px-4 py-1 mb-4 animate-fadeInUp">
-                    <span className="text-brand-orange font-medium text-sm">SUMMER COLLECTION 2024</span>
+                    <span className="text-brand-orange font-medium text-sm">SUMMER COLLECTION 2026</span>
                 </div>
                 
                 <h1

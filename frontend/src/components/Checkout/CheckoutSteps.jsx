@@ -1,41 +1,56 @@
 import React from 'react'
-import styles from '../../styles/styles'
+import { AiOutlineCheck, AiOutlineShoppingCart, AiOutlineCreditCard, AiOutlineSmile } from 'react-icons/ai'
 
 const CheckoutSteps = ({ active }) => {
-    console.log(active);
-    return (
-        <div className='w-full flex justify-center'>
-            <div className="w-[90%] 800px:w-[50%] flex items-center flex-wrap">
-                <div className={`${styles.noramlFlex}`}>
-                    <div className={`${styles.cart_button}`}>
-                        <span className={`${styles.cart_button_text}`}>1.Shipping</span>
-                    </div>
-                    <div className={`${active > 1 ? "w-[30px] 800px:w-[70px] h-[4px] !bg-[#f63b60]"
-                            : "w-[30px] 800px:w-[70px] h-[4px] !bg-[#FDE1E6]"
-                        }`} />
-                </div>
+  const steps = [
+    { id: 1, name: "Shipping", icon: <AiOutlineShoppingCart size={18} /> },
+    { id: 2, name: "Payment", icon: <AiOutlineCreditCard size={18} /> },
+    { id: 3, name: "Success", icon: <AiOutlineSmile size={18} /> },
+  ]
 
-                <div className={`${styles.noramlFlex}`}>
-                    <div className={`${active > 1 ? `${styles.cart_button}` : `${styles.cart_button} !bg-[#FDE1E6]`}`}>
-                        <span className={`${active > 1 ? `${styles.cart_button_text}` : `${styles.cart_button_text} !text-[#f63b60]`}`}>
-                            2.Payment
-                        </span>
-                    </div>
-                </div>
-
-                <div className={`${styles.noramlFlex}`}>
-                    <div className={`${active > 3 ? "w-[30px] 800px:w-[70px] h-[4px] !bg-[#f63b60]"
-                            : "w-[30px] 800px:w-[70px] h-[4px] !bg-[#FDE1E6]"
-                        }`} />
-                    <div className={`${active > 2 ? `${styles.cart_button}` : `${styles.cart_button} !bg-[#FDE1E6]`}`}>
-                        <span className={`${active > 2 ? `${styles.cart_button_text}` : `${styles.cart_button_text} !text-[#f63b60]`}`}>
-                            3.Success
-                        </span>
-                    </div>
-                </div>
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="flex items-center justify-between">
+        {steps.map((step, index) => (
+          <React.Fragment key={step.id}>
+            {/* Step Circle */}
+            <div className="flex flex-col items-center">
+              <div
+                className={`
+                  w-10 h-10 rounded-full flex items-center justify-center text-lg font-semibold
+                  transition-all duration-300
+                  ${active >= step.id 
+                    ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/30' 
+                    : 'bg-gray-200 text-gray-500'
+                  }
+                `}
+              >
+                {active > step.id ? <AiOutlineCheck size={18} /> : step.icon}
+              </div>
+              <span
+                className={`
+                  text-xs mt-2 font-medium transition-colors duration-300
+                  ${active >= step.id ? 'text-brand-orange' : 'text-text-secondary'}
+                `}
+              >
+                {step.name}
+              </span>
             </div>
-        </div>
-    )
+
+            {/* Connector Line */}
+            {index < steps.length - 1 && (
+              <div
+                className={`
+                  flex-1 h-0.5 mx-2 transition-all duration-300
+                  ${active > step.id ? 'bg-brand-orange' : 'bg-gray-200'}
+                `}
+              />
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 export default CheckoutSteps

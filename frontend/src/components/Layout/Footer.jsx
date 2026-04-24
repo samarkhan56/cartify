@@ -7,11 +7,6 @@ import {
   AiOutlineSend,
 } from "react-icons/ai";
 import { Link } from "react-router-dom";
-import {
-  footercompanyLinks,
-  footerProductLinks,
-  footerSupportLinks,
-} from "../../static/data";
 import { toast } from "react-toastify";
 
 const Footer = () => {
@@ -23,9 +18,29 @@ const Footer = () => {
       toast.error("Please enter your email address!");
       return;
     }
-    toast.success("Thanks for subscribing! 🎉");
+    toast.success("Thanks for subscribing!");
     setEmail("");
   };
+
+  // Quick Links - All working paths
+  const quickLinks = [
+    { name: "Home", path: "/" },
+    { name: "Products", path: "/products" },
+    { name: "Best Selling", path: "/best-selling" },
+    { name: "Events", path: "/events" },
+    { name: "FAQ", path: "/faq" },
+    { name: "Contact Us", path: "/contact" },
+  ];
+
+  // Support Links - All working paths
+  const supportLinks = [
+    { name: "About Us", path: "/about" },
+    { name: "Privacy Policy", path: "/privacy" },
+    { name: "Terms of Service", path: "/terms" },
+    { name: "Shipping Info", path: "/shipping-info" },
+    { name: "Returns", path: "/returns" },
+    { name: "Help Center", path: "/faq" },
+  ];
 
   return (
     <footer className="bg-primary-dark text-light-text pt-16 pb-8 mt-12">
@@ -59,8 +74,8 @@ const Footer = () => {
           </form>
         </div>
 
-        {/* Footer Links Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 pb-12 border-b border-border-gray/30">
+        {/* Footer Links Grid - Company Section REMOVED */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 pb-12 border-b border-border-gray/30">
           {/* Brand Column */}
           <div className="text-center sm:text-left">
             <img
@@ -72,16 +87,16 @@ const Footer = () => {
               Empowering sellers with AI-driven pricing and smart advertising tools.
             </p>
             <div className="flex justify-center sm:justify-start gap-4 mt-5">
-              <a href="#" className="text-light-text/60 hover:text-brand-orange transition-colors">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-light-text/60 hover:text-brand-orange transition-colors">
                 <AiFillFacebook size={24} />
               </a>
-              <a href="#" className="text-light-text/60 hover:text-brand-orange transition-colors">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-light-text/60 hover:text-brand-orange transition-colors">
                 <AiOutlineTwitter size={24} />
               </a>
-              <a href="#" className="text-light-text/60 hover:text-brand-orange transition-colors">
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-light-text/60 hover:text-brand-orange transition-colors">
                 <AiFillInstagram size={24} />
               </a>
-              <a href="#" className="text-light-text/60 hover:text-brand-orange transition-colors">
+              <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-light-text/60 hover:text-brand-orange transition-colors">
                 <AiFillYoutube size={24} />
               </a>
             </div>
@@ -91,27 +106,10 @@ const Footer = () => {
           <div className="text-center sm:text-left">
             <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              {footerProductLinks.map((link, index) => (
+              {quickLinks.map((link, index) => (
                 <li key={index}>
                   <Link
-                    to={link.link}
-                    className="text-light-text/60 hover:text-brand-orange transition-colors text-sm"
-                  >
-                    {link.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company Column */}
-          <div className="text-center sm:text-left">
-            <h3 className="text-lg font-semibold mb-4">Company</h3>
-            <ul className="space-y-2">
-              {footercompanyLinks.map((link, index) => (
-                <li key={index}>
-                  <Link
-                    to={link.link}
+                    to={link.path}
                     className="text-light-text/60 hover:text-brand-orange transition-colors text-sm"
                   >
                     {link.name}
@@ -125,10 +123,10 @@ const Footer = () => {
           <div className="text-center sm:text-left">
             <h3 className="text-lg font-semibold mb-4">Support</h3>
             <ul className="space-y-2">
-              {footerSupportLinks.map((link, index) => (
+              {supportLinks.map((link, index) => (
                 <li key={index}>
                   <Link
-                    to={link.link}
+                    to={link.path}
                     className="text-light-text/60 hover:text-brand-orange transition-colors text-sm"
                   >
                     {link.name}
@@ -145,6 +143,7 @@ const Footer = () => {
           <div className="flex justify-center gap-6 mt-2">
             <Link to="/terms" className="hover:text-brand-orange transition-colors">Terms of Service</Link>
             <Link to="/privacy" className="hover:text-brand-orange transition-colors">Privacy Policy</Link>
+            <Link to="/contact" className="hover:text-brand-orange transition-colors">Contact Us</Link>
           </div>
         </div>
       </div>

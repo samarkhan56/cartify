@@ -7,7 +7,7 @@ import {
     updatUserAddress,
     updateUserInformation,
 } from "../../redux/actions/user";
-import { AiOutlineArrowRight, AiOutlineCamera, AiOutlineDelete } from 'react-icons/ai';
+import { AiOutlineArrowRight, AiOutlineCamera, AiOutlineDelete, AiOutlineMail, AiOutlinePhone, AiOutlineUser } from 'react-icons/ai';
 import { Link } from 'react-router-dom';
 import styles from "../../styles/styles";
 import { DataGrid } from "@material-ui/data-grid";
@@ -18,7 +18,8 @@ import { toast } from "react-toastify";
 import axios from 'axios';
 import { Country, State } from "country-state-city";
 import { getAllOrdersOfUser } from '../../redux/actions/order';
-
+import { RiLockPasswordLine } from 'react-icons/ri';
+import { HiOutlineLocationMarker } from 'react-icons/hi';
 
 const ProfileContent = ({ active }) => {
     const { user, error, successMessage } = useSelector((state) => state.user);
@@ -27,9 +28,9 @@ const ProfileContent = ({ active }) => {
     const [phoneNumber, setPhoneNumber] = useState(user && user.phoneNumber);
     const [password, setPassword] = useState("");
     const [avatar, setAvatar] = useState(null);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     const dispatch = useDispatch();
-
 
     useEffect(() => {
         if (error) {
@@ -40,21 +41,20 @@ const ProfileContent = ({ active }) => {
             toast.success(successMessage);
             dispatch({ type: "clearMessages" });
         }
-    }, [error, successMessage]);
+    }, [error, successMessage, dispatch]);
 
-
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        dispatch(updateUserInformation(name, email, phoneNumber, password));
+        setIsUpdating(true);
+        await dispatch(updateUserInformation(name, email, phoneNumber, password));
+        setIsUpdating(false);
     }
 
-    // Image update
     const handleImage = async (e) => {
         const file = e.target.files[0];
         setAvatar(file);
 
         const formData = new FormData();
-
         formData.append("image", e.target.files[0]);
 
         await axios
@@ -66,430 +66,444 @@ const ProfileContent = ({ active }) => {
             })
             .then((response) => {
                 dispatch(loadUser());
-                toast.success("avatar updated successfully!");
+                toast.success("Avatar updated successfully!");
             })
             .catch((error) => {
-                toast.error(error);
+                toast.error(error.response?.data?.message || "Failed to update avatar");
             });
     };
 
-
     return (
         <div className='w-full'>
-            {/* Profile */}
-            {
-                active === 1 && (
-                    <>
-                        <div className="flex justify-center w-full">
-                            <div className='relative'>
-                                <img src={`${backend_url}${user?.avatar}`}
-                                    className="w-[150px] h-[150px] rounded-full object-cover border-[3px] border-[#3ad132]"
-                                    alt="profile img" />
+            {/* Profile Section */}
+            {active === 1 && (
+                <div className="bg-card rounded-xl shadow-md p-6">
+                    <h2 className="text-xl font-semibold text-text-primary mb-6 pb-2 border-b border-border-gray">
+                        Profile Information
+                    </h2>
+                    
+                    {/* Avatar Section */}
+                    <div className="flex justify-center mb-6">
+                        <div className="relative">
+                            <img
+                                src={`${backend_url}${user?.avatar || 'default-avatar.png'}`}
+                                className="w-28 h-28 rounded-full object-cover border-4 border-brand-orange shadow-md"
+                                alt="Profile"
+                            />
+                            <label
+                                htmlFor="avatar-upload"
+                                className="absolute bottom-0 right-0 w-8 h-8 bg-brand-orange rounded-full flex items-center justify-center cursor-pointer hover:bg-orange-hover transition-colors shadow-md"
+                            >
+                                <AiOutlineCamera size={16} className="text-white" />
+                            </label>
+                            <input
+                                type="file"
+                                id="avatar-upload"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleImage}
+                            />
+                        </div>
+                    </div>
 
-                                <div className="w-[30px] h-[30px] bg-[#E3E9EE] rounded-full flex items-center justify-center cursor-pointer absolute bottom-[5px] right-[5px]">
-                                    <input type="file"
-                                        id="image"
-                                        className="hidden"
-                                        onChange={handleImage}
+                    {/* Profile Form */}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-1">
+                                    Full Name
+                                </label>
+                                <div className="relative">
+                                    <AiOutlineUser className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
+                                    <input
+                                        type="text"
+                                        className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        required
                                     />
-                                    <label htmlFor="image">
-                                        <AiOutlineCamera />
-                                    </label>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-1">
+                                    Email Address
+                                </label>
+                                <div className="relative">
+                                    <AiOutlineMail className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
+                                    <input
+                                        type="email"
+                                        className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                    />
                                 </div>
                             </div>
                         </div>
-                        <br />
-                        <br />
 
-                        <div className='w-full px-5'>
-                            <form onSubmit={handleSubmit} aria-required={true}>
-                                <div className='w-full 800px:flex block pb-3'>
-
-                                    <div className=' w-[100%] 800px:w-[50%]'>
-                                        <label className='block pb-2'>Full Name</label>
-                                        <input type="text"
-                                            className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
-                                            required
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                        />
-                                    </div>
-
-                                    <div className=' w-[100%] 800px:w-[50%]'>
-                                        <label className='block pb-2'>Email Address</label>
-                                        <input type="text"
-                                            className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
-                                            required
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                        />
-                                    </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-1">
+                                    Phone Number
+                                </label>
+                                <div className="relative">
+                                    <AiOutlinePhone className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
+                                    <input
+                                        type="tel"
+                                        className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+                                        value={phoneNumber || ''}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                    />
                                 </div>
-
-                                <div className="w-full 800px:flex block pb-3">
-                                    <div className=" w-[100%] 800px:w-[50%]">
-                                        <label className="block pb-2">Phone Number</label>
-                                        <input
-                                            type="number"
-                                            className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
-                                            required
-                                            value={phoneNumber}
-                                            onChange={(e) => setPhoneNumber(e.target.value)}
-                                        />
-                                    </div>
-
-                                    <div className=" w-[100%] 800px:w-[50%]">
-                                        <label className="block pb-2">Enter your password</label>
-                                        <input
-                                            type="password"
-                                            className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
-                                            required
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                        />
-                                    </div>
-
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-1">
+                                    Password (required to save changes)
+                                </label>
+                                <div className="relative">
+                                    <RiLockPasswordLine className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" size={16} />
+                                    <input
+                                        type="password"
+                                        className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="Enter your password to confirm changes"
+                                        required
+                                    />
                                 </div>
-                                <input
-                                    className={`w-[250px] h-[40px] border border-[#3a24db] text-center text-[#3a24db] rounded-[3px] mt-8 cursor-pointer`}
-                                    required
-                                    value="Update"
-                                    type="submit"
-                                />
-                            </form>
+                            </div>
                         </div>
-                    </>
-                )
-            }
 
-            {/* Odder  */}
-            {
-                active === 2 && (
-                    <div>
-                        <AllOrders />
-                    </div>
-                )
-            }
+                        <button
+                            type="submit"
+                            disabled={isUpdating}
+                            className="mt-4 px-6 py-2 bg-brand-orange hover:bg-orange-hover text-white rounded-lg font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50"
+                        >
+                            {isUpdating ? "Updating..." : "Update Profile"}
+                        </button>
+                    </form>
+                </div>
+            )}
 
-            {/* Refund order */}
-            {
-                active === 3 && (
-                    <div>
-                        <AllRefundOrders />
-                    </div>
-                )
-            }
+            {/* Orders Section */}
+            {active === 2 && (
+                <div className="bg-card rounded-xl shadow-md p-6">
+                    <h2 className="text-xl font-semibold text-text-primary mb-4 pb-2 border-b border-border-gray">
+                        My Orders
+                    </h2>
+                    <AllOrders />
+                </div>
+            )}
 
-            {/* Track order */}
+            {/* Refunds Section */}
+            {active === 3 && (
+                <div className="bg-card rounded-xl shadow-md p-6">
+                    <h2 className="text-xl font-semibold text-text-primary mb-4 pb-2 border-b border-border-gray">
+                        Refund Requests
+                    </h2>
+                    <AllRefundOrders />
+                </div>
+            )}
+
+            {/* Track Order Section */}
             {active === 5 && (
-                <div>
+                <div className="bg-card rounded-xl shadow-md p-6">
+                    <h2 className="text-xl font-semibold text-text-primary mb-4 pb-2 border-b border-border-gray">
+                        Track Your Orders
+                    </h2>
                     <TrackOrder />
                 </div>
             )}
 
-            {/* Change Password */}
+            {/* Change Password Section */}
             {active === 6 && (
-                <div>
+                <div className="bg-card rounded-xl shadow-md p-6">
+                    <h2 className="text-xl font-semibold text-text-primary mb-4 pb-2 border-b border-border-gray">
+                        Change Password
+                    </h2>
                     <ChangePassword />
                 </div>
             )}
 
-            {/* user Address */}
+            {/* Address Section */}
             {active === 7 && (
-                <div>
+                <div className="bg-card rounded-xl shadow-md p-6">
+                    <h2 className="text-xl font-semibold text-text-primary mb-4 pb-2 border-b border-border-gray">
+                        Address Book
+                    </h2>
                     <Address />
                 </div>
             )}
-
-        </div >
+        </div>
     )
 }
 
-// All orders
+// All Orders Component
 const AllOrders = () => {
     const { user } = useSelector((state) => state.user);
-
     const { orders } = useSelector((state) => state.order);
     const dispatch = useDispatch();
 
     useEffect(() => {
-        dispatch(getAllOrdersOfUser(user._id));
-    }, []);
+        if (user?._id) {
+            dispatch(getAllOrdersOfUser(user._id));
+        }
+    }, [dispatch, user]);
 
-
-
+    const getStatusColor = (status) => {
+        switch(status) {
+            case "Delivered": return "text-success";
+            case "Processing": return "text-info";
+            case "Shipped": return "text-brand-orange";
+            default: return "text-red-500";
+        }
+    };
 
     const columns = [
-        { field: "id", headerName: "Order ID", minWidth: 150, flex: 0.7 },
-
+        { field: "id", headerName: "Order ID", minWidth: 200, flex: 1 },
         {
             field: "status",
             headerName: "Status",
             minWidth: 130,
             flex: 0.7,
-            cellClassName: (params) => {
-                return params.getValue(params.id, "status") === "Delivered"
-                    ? "greenColor"
-                    : "redColor";
-            },
+            renderCell: (params) => (
+                <span className={`font-medium ${getStatusColor(params.value)}`}>
+                    {params.value}
+                </span>
+            ),
         },
         {
             field: "itemsQty",
-            headerName: "Items Qty",
+            headerName: "Items",
             type: "number",
-            minWidth: 130,
-            flex: 0.7,
+            minWidth: 100,
+            flex: 0.5,
         },
-
         {
             field: "total",
             headerName: "Total",
             type: "number",
-            minWidth: 130,
-            flex: 0.8,
+            minWidth: 120,
+            flex: 0.6,
         },
-
         {
-            field: " ",
-            flex: 1,
-            minWidth: 150,
+            field: "action",
             headerName: "",
-            type: "number",
-            sortable: false,
-            renderCell: (params) => {
-                return (
-                    <>
-                        <Link to={`/user/order/${params.id}`}>
-                            <Button>
-                                <AiOutlineArrowRight size={20} />
-                            </Button>
-                        </Link>
-                    </>
-                );
-            },
+            minWidth: 80,
+            flex: 0.3,
+            renderCell: (params) => (
+                <Link to={`/user/order/${params.id}`}>
+                    <Button className="text-brand-orange">
+                        <AiOutlineArrowRight size={20} />
+                    </Button>
+                </Link>
+            ),
         },
     ];
 
-    const row = [];
-
-    orders &&
-        orders.forEach((item) => {
-            row.push({
-                id: item._id,
-                itemsQty: item.cart.length,
-                total: "US$ " + item.totalPrice,
-                status: item.status,
-            });
-        });
-
+    const rows = orders?.map((item) => ({
+        id: item._id,
+        itemsQty: item.cart?.length || 0,
+        total: `$${item.totalPrice}`,
+        status: item.status,
+    })) || [];
 
     return (
-        <>
-            <div className='pl-8 pt-1'>
-                <DataGrid
-                    rows={row}
-                    columns={columns}
-                    pageSize={10}
-                    disableSelectionOnClick
-                    autoHeight
-                />
-
-            </div>
-        </>
+        <div className="w-full">
+            <DataGrid
+                rows={rows}
+                columns={columns}
+                pageSize={10}
+                disableSelectionOnClick
+                autoHeight
+                className="border-0"
+            />
+        </div>
     )
 }
 
-// Refund page
-
+// Refund Orders Component
 const AllRefundOrders = () => {
     const { user } = useSelector((state) => state.user);
     const { orders } = useSelector((state) => state.order);
     const dispatch = useDispatch();
 
     useEffect(() => {
-        dispatch(getAllOrdersOfUser(user._id));
-    }, []);
+        if (user?._id) {
+            dispatch(getAllOrdersOfUser(user._id));
+        }
+    }, [dispatch, user]);
 
-
-    const eligibleOrders = orders && orders.filter((item) => item.status === "Processing refund");
+    const eligibleOrders = orders?.filter((item) => item.status === "Processing refund") || [];
 
     const columns = [
-        { field: "id", headerName: "Order ID", minWidth: 150, flex: 0.7 },
-
+        { field: "id", headerName: "Order ID", minWidth: 200, flex: 1 },
         {
             field: "status",
             headerName: "Status",
-            minWidth: 130,
-            flex: 0.7,
-            cellClassName: (params) => {
-                return params.getValue(params.id, "status") === "Delivered"
-                    ? "greenColor"
-                    : "redColor";
-            },
+            minWidth: 150,
+            flex: 0.8,
+            renderCell: () => <span className="text-yellow-600 font-medium">Processing Refund</span>,
         },
         {
             field: "itemsQty",
-            headerName: "Items Qty",
+            headerName: "Items",
             type: "number",
-            minWidth: 130,
-            flex: 0.7,
+            minWidth: 100,
+            flex: 0.5,
         },
-
         {
             field: "total",
             headerName: "Total",
             type: "number",
-            minWidth: 130,
-            flex: 0.8,
+            minWidth: 120,
+            flex: 0.6,
         },
-
         {
-            field: " ",
-            flex: 1,
-            minWidth: 150,
+            field: "action",
             headerName: "",
-            type: "number",
-            sortable: false,
-            renderCell: (params) => {
-                return (
-                    <>
-                        <Link to={`/user/order/${params.id}`}>
-                            <Button>
-                                <AiOutlineArrowRight size={20} />
-                            </Button>
-                        </Link>
-                    </>
-                );
-            },
+            minWidth: 80,
+            flex: 0.3,
+            renderCell: (params) => (
+                <Link to={`/user/order/${params.id}`}>
+                    <Button className="text-brand-orange">
+                        <AiOutlineArrowRight size={20} />
+                    </Button>
+                </Link>
+            ),
         },
     ];
 
-    const row = [];
-
-    eligibleOrders &&
-        eligibleOrders.forEach((item) => {
-            row.push({
-                id: item._id,
-                itemsQty: item.cart.length,
-                total: "US$ " + item.totalPrice,
-                status: item.status,
-            });
-        });
+    const rows = eligibleOrders.map((item) => ({
+        id: item._id,
+        itemsQty: item.cart?.length || 0,
+        total: `$${item.totalPrice}`,
+        status: item.status,
+    }));
 
     return (
-        <div className="pl-8 pt-1">
-            <DataGrid
-                rows={row}
-                columns={columns}
-                pageSize={10}
-                autoHeight
-                disableSelectionOnClick
-            />
+        <div className="w-full">
+            {rows.length > 0 ? (
+                <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    pageSize={10}
+                    autoHeight
+                    disableSelectionOnClick
+                    className="border-0"
+                />
+            ) : (
+                <p className="text-center text-text-secondary py-8">No refund requests found.</p>
+            )}
         </div>
-    );
-};
+    )
+}
 
-
-// Track order
+// Track Order Component
 const TrackOrder = () => {
-
     const { user } = useSelector((state) => state.user);
     const { orders } = useSelector((state) => state.order);
     const dispatch = useDispatch();
 
     useEffect(() => {
-        dispatch(getAllOrdersOfUser(user._id));
-    }, []);
+        if (user?._id) {
+            dispatch(getAllOrdersOfUser(user._id));
+        }
+    }, [dispatch, user]);
 
-
+    const getStatusColor = (status) => {
+        switch(status) {
+            case "Delivered": return "text-success";
+            case "Processing": return "text-info";
+            case "Shipped": return "text-brand-orange";
+            default: return "text-red-500";
+        }
+    };
 
     const columns = [
-        { field: "id", headerName: "Order ID", minWidth: 150, flex: 0.7 },
-
+        { field: "id", headerName: "Order ID", minWidth: 200, flex: 1 },
         {
             field: "status",
             headerName: "Status",
             minWidth: 150,
-            flex: 0.7,
-            cellClassName: (params) => {
-                return params.getValue(params.id, "status") === "Delivered"
-                    ? "greenColor"
-                    : "redColor";
-            },
+            flex: 0.8,
+            renderCell: (params) => (
+                <span className={`font-medium ${getStatusColor(params.value)}`}>
+                    {params.value}
+                </span>
+            ),
         },
         {
             field: "itemsQty",
-            headerName: "Items Qty",
+            headerName: "Items",
             type: "number",
-            minWidth: 130,
-            flex: 0.7,
+            minWidth: 100,
+            flex: 0.5,
         },
-
         {
             field: "total",
             headerName: "Total",
             type: "number",
-            minWidth: 130,
-            flex: 0.8,
+            minWidth: 120,
+            flex: 0.6,
         },
-
         {
-            field: " ",
-            flex: 1,
-            minWidth: 150,
+            field: "action",
             headerName: "",
-            type: "number",
-            sortable: false,
-            renderCell: (params) => {
-                return (
-                    <>
-                        <Link to={`/user/track/order/${params.id}`}>
-                            <Button>
-                                <MdTrackChanges size={20} />
-                            </Button>
-                        </Link>
-                    </>
-                );
-            },
+            minWidth: 80,
+            flex: 0.3,
+            renderCell: (params) => (
+                <Link to={`/user/track/order/${params.id}`}>
+                    <Button className="text-brand-orange">
+                        <MdTrackChanges size={20} />
+                    </Button>
+                </Link>
+            ),
         },
     ];
 
-    const row = []
-
-    orders &&
-        orders.forEach((item) => {
-            row.push({
-                id: item._id,
-                itemsQty: item.cart.length,
-                total: "US$ " + item.totalPrice,
-                status: item.status,
-            });
-        });
+    const rows = orders?.map((item) => ({
+        id: item._id,
+        itemsQty: item.cart?.length || 0,
+        total: `$${item.totalPrice}`,
+        status: item.status,
+    })) || [];
 
     return (
-        <div className="pl-8 pt-1">
+        <div className="w-full">
             <DataGrid
-                rows={row}
+                rows={rows}
                 columns={columns}
                 pageSize={10}
                 disableSelectionOnClick
                 autoHeight
+                className="border-0"
             />
         </div>
     )
 }
 
-
-// Payment method
-
+// Change Password Component
 const ChangePassword = () => {
-
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
     const passwordChangeHandler = async (e) => {
         e.preventDefault();
+        
+        if (newPassword !== confirmPassword) {
+            toast.error("New passwords do not match");
+            return;
+        }
+        
+        if (newPassword.length < 6) {
+            toast.error("Password must be at least 6 characters");
+            return;
+        }
+
+        setIsLoading(true);
 
         await axios
             .put(
@@ -498,343 +512,259 @@ const ChangePassword = () => {
                 { withCredentials: true }
             )
             .then((res) => {
-                toast.success("Pawword is updated");
+                toast.success("Password updated successfully!");
                 setOldPassword("");
                 setNewPassword("");
                 setConfirmPassword("");
             })
             .catch((error) => {
-                toast.error(error.response.data.message);
+                toast.error(error.response?.data?.message || "Failed to update password");
+            })
+            .finally(() => {
+                setIsLoading(false);
             });
     };
 
     return (
-        <div className='w-full px-5'>
-            <h1
-                className='text-[25px] text-center font-[600] text[#000000ba] pb-2'
-            >
-                Change Password
-            </h1>
-            <div className='w-full'>
-                <form
-                    aria-required
-                    onSubmit={passwordChangeHandler}
-                    className="flex flex-col items-center"
-                >
-                    <div className=" w-[100%] 800px:w-[50%] mt-5">
-                        <label className='block pb-2'>Enter your Old password</label>
-                        <input type="password"
-                            className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
-                            required
-                            value={oldPassword}
-                            onChange={(e) => setOldPassword(e.target.value)}
-                        />
-                    </div>
-
-                    <div className=" w-[100%] 800px:w-[50%] mt-2">
-                        <label className='block pb-2'>Enter your new Password</label>
-                        <input type="password"
-                            className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
-                            required
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                        />
-                    </div>
-
-                    <div className=" w-[100%] 800px:w-[50%] mt-2">
-                        <label className="block pb-2">Enter your confirm password</label>
-                        <input
-                            type="password"
-                            className={`${styles.input} !w-[95%] mb-4 800px:mb-0`}
-                            required
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                        />
-                        <input
-                            className={`w-[95%] h-[40px] border border-[#3a24db] text-center text-[#3a24db] rounded-[3px] mt-8 cursor-pointer`}
-                            required
-                            value="Update"
-                            type="submit"
-                        />
-                    </div>
-                </form>
-
+        <form onSubmit={passwordChangeHandler} className="space-y-4 max-w-lg mx-auto">
+            <div>
+                <label className="block text-sm font-medium text-text-primary mb-1">
+                    Current Password
+                </label>
+                <input
+                    type="password"
+                    className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    required
+                />
             </div>
-
-
-
-
-        </div>
-
+            <div>
+                <label className="block text-sm font-medium text-text-primary mb-1">
+                    New Password
+                </label>
+                <input
+                    type="password"
+                    className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-text-primary mb-1">
+                    Confirm New Password
+                </label>
+                <input
+                    type="password"
+                    className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                />
+            </div>
+            <button
+                type="submit"
+                disabled={isLoading}
+                className="px-6 py-2 bg-brand-orange hover:bg-orange-hover text-white rounded-lg font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50"
+            >
+                {isLoading ? "Updating..." : "Update Password"}
+            </button>
+        </form>
     )
 }
 
-// Address
+// Address Component
 const Address = () => {
-
     const [open, setOpen] = useState(false);
     const [country, setCountry] = useState("");
     const [city, setCity] = useState("");
-    const [zipCode, setZipCode] = useState();
+    const [zipCode, setZipCode] = useState("");
     const [address1, setAddress1] = useState("");
     const [address2, setAddress2] = useState("");
     const [addressType, setAddressType] = useState("");
     const { user } = useSelector((state) => state.user);
     const dispatch = useDispatch();
 
-
-    const addressTypeData = [
-        {
-            name: "Default",
-        },
-        {
-            name: "Home",
-        },
-        {
-            name: "Office",
-        },
-    ];
+    const addressTypeData = ["Default", "Home", "Office"];
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (addressType === "" || country === "" || city === "") {
-            toast.error("Please fill all the fields!");
-        } else {
-            // hear use redex
-            dispatch(
-                updatUserAddress(
-                    country,
-                    city,
-                    address1,
-                    address2,
-                    zipCode,
-                    addressType
-                )
-            );
-            setOpen(false);
-            setCountry("");
-            setCity("");
-            setAddress1("");
-            setAddress2("");
-            setZipCode(null); // return type is int so default is null
-            setAddressType("");
+        if (!addressType || !country || !city || !address1) {
+            toast.error("Please fill all required fields!");
+            return;
         }
+
+        dispatch(
+            updatUserAddress(
+                country,
+                city,
+                address1,
+                address2,
+                zipCode,
+                addressType
+            )
+        );
+        setOpen(false);
+        setCountry("");
+        setCity("");
+        setAddress1("");
+        setAddress2("");
+        setZipCode("");
+        setAddressType("");
     }
 
     const handleDelete = (item) => {
-        const id = item._id;
-        dispatch(deleteUserAddress(id));
+        dispatch(deleteUserAddress(item._id));
     }
 
     return (
-        <div className='w-full px-5'>
+        <div>
+            {/* Add Address Modal */}
+            {open && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-card rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+                        <div className="sticky top-0 bg-card border-b border-border-gray p-4 flex justify-between items-center">
+                            <h3 className="font-semibold text-text-primary">Add New Address</h3>
+                            <button onClick={() => setOpen(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                                <RxCross1 size={18} className="text-text-secondary" />
+                            </button>
+                        </div>
+                        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-1">Country</label>
+                                <select
+                                    value={country}
+                                    onChange={(e) => setCountry(e.target.value)}
+                                    className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none"
+                                    required
+                                >
+                                    <option value="">Select Country</option>
+                                    {Country?.getAllCountries().map((item) => (
+                                        <option key={item.isoCode} value={item.isoCode}>
+                                            {item.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-            {
-                open && (
-                    <div className="fixed w-full h-screen bg-[#0000004b] top-0 left-0 flex items-center justify-center ">
-                        <div className="w-[35%] h-[80vh] bg-white rounded shadow relative overflow-y-scroll">
-                            <div className="w-full flex justify-end p-3">
-                                <RxCross1
-                                    size={30}
-                                    className="cursor-pointer"
-                                    onClick={() => setOpen(false)}
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-1">City</label>
+                                <select
+                                    value={city}
+                                    onChange={(e) => setCity(e.target.value)}
+                                    className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none"
+                                    required
+                                    disabled={!country}
+                                >
+                                    <option value="">Select City</option>
+                                    {State?.getStatesOfCountry(country).map((item) => (
+                                        <option key={item.isoCode} value={item.isoCode}>
+                                            {item.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-1">Address Line 1</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none"
+                                    value={address1}
+                                    onChange={(e) => setAddress1(e.target.value)}
+                                    required
                                 />
                             </div>
-                            <h1 className="text-center text-[25px] font-Poppins">
-                                Add New Address
-                            </h1>
-                            <div className='w-full'>
-                                <form aria-required onSubmit={handleSubmit} className="w-full">
-                                    <div className="w-full block p-4">
-                                        <div className="w-full pb-2">
-                                            <label className="block pb-2">Country</label>
-                                            <select
-                                                name=""
-                                                id=""
-                                                value={country}
-                                                onChange={(e) => setCountry(e.target.value)}
-                                                className="w-[95%] border h-[40px] rounded-[5px]"
-                                            >
-                                                <option value=""
-                                                    className='bloc border pb-2'
-                                                >
-                                                    Choose your contry
-                                                </option>
-                                                {
-                                                    Country &&
-                                                    Country.getAllCountries().map((item) => (
-                                                        <option
-                                                            className="block pb-2"
-                                                            key={item.isoCode}
-                                                            value={item.isoCode}
-                                                        >
-                                                            {item.name}
-                                                        </option>
-                                                    ))}
-                                            </select>
-                                        </div>
 
-                                        {/* City */}
-                                        <div className="w-full pb-2">
-                                            <label className="block pb-2">Choose your City</label>
-                                            <select
-                                                name=""
-                                                id=""
-                                                value={city}
-                                                onChange={(e) => setCity(e.target.value)}
-                                                className="w-[95%] border h-[40px] rounded-[5px]"
-                                            >
-                                                <option value="" className="block border pb-2">
-                                                    choose your city
-                                                </option>
-                                                {State &&
-                                                    State.getStatesOfCountry(country).map((item) => (
-                                                        <option
-                                                            className="block pb-2"
-                                                            key={item.isoCode}
-                                                            value={item.isoCode}
-                                                        >
-                                                            {item.name}
-                                                        </option>
-                                                    ))}
-                                            </select>
-                                        </div>
-
-                                        {/* Address 1 */}
-                                        <div className="w-full pb-2">
-                                            <label className="block pb-2">Address 1</label>
-                                            <input
-                                                type="address"
-                                                className={`${styles.input}`}
-                                                required
-                                                value={address1}
-                                                onChange={(e) => setAddress1(e.target.value)}
-                                            />
-                                        </div>
-                                        {/* Address 2 */}
-                                        <div className="w-full pb-2">
-                                            <label className="block pb-2">Address 2</label>
-                                            <input
-                                                type="address"
-                                                className={`${styles.input}`}
-                                                required
-                                                value={address2}
-                                                onChange={(e) => setAddress2(e.target.value)}
-                                            />
-                                        </div>
-
-                                        <div className="w-full pb-2">
-                                            <label className="block pb-2">Zip Code</label>
-                                            <input
-                                                type="number"
-                                                className={`${styles.input}`}
-                                                required
-                                                value={zipCode}
-                                                onChange={(e) => setZipCode(e.target.value)}
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <label className='block pb-2'>Address Type</label>
-                                            <select name="" id=""
-                                                value={addressType}
-                                                onChange={(e) => setAddressType(e.target.value)}
-                                                className='w-[95%] border h-[40px]  rounded-[5px]'
-                                            >
-                                                <option value=""
-                                                    className='block border pb-2'
-                                                >
-                                                    Choose Yoour Address Type
-                                                </option>
-                                                {
-                                                    addressTypeData &&
-                                                    addressTypeData.map((item) => (
-                                                        <option
-                                                            className='block pb-2'
-                                                            key={item.name}
-                                                            value={item.name}
-                                                        >
-                                                            {item.name}
-                                                        </option>
-                                                    ))}
-                                            </select>
-                                        </div>
-
-                                        <div className=" w-full pb-2">
-                                            <input
-                                                type="submit"
-                                                className={`${styles.input} mt-5 cursor-pointer`}
-                                                required
-                                                readOnly
-                                            />
-                                        </div>
-
-                                    </div>
-                                </form>
-
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-1">Address Line 2 (Optional)</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none"
+                                    value={address2}
+                                    onChange={(e) => setAddress2(e.target.value)}
+                                />
                             </div>
-                        </div>
 
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-1">Zip Code</label>
+                                <input
+                                    type="text"
+                                    className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none"
+                                    value={zipCode}
+                                    onChange={(e) => setZipCode(e.target.value)}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-text-primary mb-1">Address Type</label>
+                                <select
+                                    value={addressType}
+                                    onChange={(e) => setAddressType(e.target.value)}
+                                    className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none"
+                                    required
+                                >
+                                    <option value="">Select Address Type</option>
+                                    {addressTypeData.map((type) => (
+                                        <option key={type} value={type}>{type}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full py-2 bg-brand-orange hover:bg-orange-hover text-white rounded-lg font-medium transition-all duration-300"
+                            >
+                                Add Address
+                            </button>
+                        </form>
                     </div>
-                )
-
-            }
-
-            <div className='flex w-full items-center justify-between' >
-                <h1
-                    className='text-[25px] font-[600] text[#000000ba] pb-2'
-                >
-                    My Address
-                </h1>
-                <div className={`${styles.button} rounded-md`}
-                    onClick={() => setOpen(true)}
-                >
-                    <span className='text-[#fff]'>Add New</span>
-
                 </div>
+            )}
+
+            {/* Address List */}
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-text-primary">Saved Addresses</h3>
+                <button
+                    onClick={() => setOpen(true)}
+                    className="px-4 py-2 bg-brand-orange hover:bg-orange-hover text-white rounded-lg text-sm font-medium transition-all duration-300"
+                >
+                    Add New Address
+                </button>
             </div>
-            <br />
 
-            {user &&
-                user.addresses.map((item, index) => (
-                    <div
-                        className="w-full bg-white h-min 800px:h-[70px] rounded-[4px] flex items-center px-3 shadow justify-between pr-10 mb-5"
-                        key={index}
-                    >
-                        <div className="flex items-center">
-                            <h5 className="pl-5 font-[600]">{item.addressType}</h5>
-                        </div>
-                        <div className="pl-8 flex items-center">
-                            <h6 className="text-[12px] 800px:text-[unset]">
-                                {item.address1} {item.address2}
-                            </h6>
-                        </div>
-                        <div className="pl-8 flex items-center">
-                            <h6 className="text-[12px] 800px:text-[unset]">
-                                {user && user.phoneNumber}
-                            </h6>
-                        </div>
-                        <div className="min-w-[10%] flex items-center justify-between pl-8">
-                            <AiOutlineDelete
-                                size={25}
-                                className="cursor-pointer"
+            {user?.addresses?.length > 0 ? (
+                <div className="space-y-3">
+                    {user.addresses.map((item, index) => (
+                        <div
+                            key={index}
+                            className="flex items-center justify-between p-4 border border-border-gray rounded-lg hover:shadow-md transition-shadow"
+                        >
+                            <div className="flex items-start gap-3">
+                                <HiOutlineLocationMarker size={20} className="text-brand-orange mt-0.5" />
+                                <div>
+                                    <p className="font-medium text-text-primary">{item.addressType}</p>
+                                    <p className="text-sm text-text-secondary">{item.address1}</p>
+                                    {item.address2 && <p className="text-sm text-text-secondary">{item.address2}</p>}
+                                    <p className="text-sm text-text-secondary">{item.city}, {item.country} {item.zipCode}</p>
+                                </div>
+                            </div>
+                            <button
                                 onClick={() => handleDelete(item)}
-                            />
+                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                                <AiOutlineDelete size={18} />
+                            </button>
                         </div>
-                    </div>
-                ))}
-
-            {
-                user && user.addresses.length === 0 && (
-                    <h5 className="text-center pt-8 text-[18px]">
-                        You not have any saved address!
-                    </h5>
-                )}
+                    ))}
+                </div>
+            ) : (
+                <p className="text-center text-text-secondary py-8">No saved addresses. Add one to make checkout faster!</p>
+            )}
         </div>
     )
-
 }
 
-
-export default ProfileContent
+export default ProfileContent;

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./App.css";
 import Store from "./redux/store";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ScrollToTop from "./components/ScrollToTop"; // ➕ ADD THIS
 import {
   LoginPage,
   SignupPage,
@@ -23,6 +24,13 @@ import {
   TrackOrderPage,
   UserInbox,
 } from "./routes/Routes";
+import AboutUsPage from "./pages/AboutUsPage";
+import ContactUsPage from "./pages/ContactUsPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsPage from "./pages/TermsPage";
+import ShippingInfoPage from "./pages/ShippingInfoPage";
+import ReturnsPage from "./pages/ReturnsPage";
+
 import {
   ShopDashboardPage,
   ShopCreateProduct,
@@ -82,6 +90,7 @@ const App = () => {
 
   return (
     <BrowserRouter>
+      <ScrollToTop /> {/* ➕ ADD THIS LINE */}
       {stripeApikey && (
         <Elements stripe={loadStripe(stripeApikey)}>
           <Routes>
@@ -101,6 +110,13 @@ const App = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sign-up" element={<SignupPage />} />
+        <Route path="/about" element={<AboutUsPage />} />
+        <Route path="/contact" element={<ContactUsPage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/shipping-info" element={<ShippingInfoPage />} />
+        <Route path="/returns" element={<ReturnsPage />} />
         <Route
           path="/activation/:activation_token"
           element={<ActivationPage />}

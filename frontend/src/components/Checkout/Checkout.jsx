@@ -7,353 +7,498 @@ import { useEffect } from "react";
 import axios from "axios";
 import { server } from "../../server";
 import { toast } from "react-toastify";
+import {
+  AiOutlineUser,
+  AiOutlineMail,
+  AiOutlinePhone,
+  AiOutlineGlobal,
+  AiOutlineEnvironment,
+  AiOutlineTag,
+} from "react-icons/ai";
+import { BiMapPin } from "react-icons/bi";
 
 const Checkout = () => {
-    const { user } = useSelector((state) => state.user);
-    const { cart } = useSelector((state) => state.cart);
-    const [country, setCountry] = useState("");
-    const [city, setCity] = useState("");
-    const [userInfo, setUserInfo] = useState(false);
-    const [address1, setAddress1] = useState("");
-    const [address2, setAddress2] = useState("");
-    const [zipCode, setZipCode] = useState(null);
-    const [couponCode, setCouponCode] = useState("");
-    const [couponCodeData, setCouponCodeData] = useState(null);
-    const [discountPrice, setDiscountPrice] = useState(null);
-    const navigate = useNavigate();
+  const { user } = useSelector((state) => state.user);
+  const { cart } = useSelector((state) => state.cart);
+  
+  // State variables for form fields
+  const [fullName, setFullName] = useState(user?.name || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
+  const [userInfo, setUserInfo] = useState(false);
+  const [address1, setAddress1] = useState("");
+  const [address2, setAddress2] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [couponCode, setCouponCode] = useState("");
+  const [couponCodeData, setCouponCodeData] = useState(null);
+  const [discountPrice, setDiscountPrice] = useState(null);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        window.scrollTo(0, 0);
-    }, []);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
-    const paymentSubmit = () => {
-        if (address1 === "" || address2 === "" || zipCode === null || country === "" || city === "") {
-            toast.error("Please choose your delivery address!")
-        } else {
-            const shippingAddress = {
-                address1,
-                address2,
-                zipCode,
-                country,
-                city,
-            };
+  const subTotalPrice = cart.reduce(
+    (acc, item) => acc + item.qty * item.discountPrice,
+    0
+  );
 
-            const orderData = {
-                cart,
-                totalPrice,
-                subTotalPrice,
-                shipping,
-                discountPrice,
-                shippingAddress,
-                user,
-            }
+  const shipping = subTotalPrice * 0.1;
+  const discountPercentage = couponCodeData ? discountPrice : "";
+  const totalPrice = couponCodeData
+    ? (subTotalPrice + shipping - discountPercentage).toFixed(2)
+    : (subTotalPrice + shipping).toFixed(2);
 
-            // update local storage with the updated orders array
-            localStorage.setItem("latestOrder", JSON.stringify(orderData));
-            navigate("/payment");
+  const paymentSubmit = () => {
+    if (
+      fullName === "" ||
+      email === "" ||
+      phoneNumber === "" ||
+      address1 === "" ||
+      zipCode === "" ||
+      country === "" ||
+      city === ""
+    ) {
+      toast.error("Please fill in all required fields!");
+      return;
+    }
+    
+    const shippingAddress = {
+      fullName,
+      email,
+      phoneNumber,
+      address1,
+      address2,
+      zipCode,
+      country,
+      city,
+    };
+
+    const orderData = {
+      cart,
+      totalPrice,
+      subTotalPrice,
+      shipping,
+      discountPrice,
+      shippingAddress,
+      user,
+    };
+
+    localStorage.setItem("latestOrder", JSON.stringify(orderData));
+    navigate("/payment");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const name = couponCode;
+
+    await axios
+      .get(`${server}/coupon/get-coupon-value/${name}`)
+      .then((res) => {
+        const shopId = res.data.couponCode?.shopId;
+        const couponCodeValue = res.data.couponCode?.value;
+
+        if (res.data.couponCode !== null) {
+          const isCouponValid =
+            cart && cart.filter((item) => item.shopId === shopId);
+
+          if (isCouponValid.length === 0) {
+            toast.error("Coupon code is not valid for this shop");
+            setCouponCode("");
+          } else {
+            const eligiblePrice = isCouponValid.reduce(
+              (acc, item) => acc + item.qty * item.discountPrice,
+              0
+            );
+            const discountPrice = (eligiblePrice * couponCodeValue) / 100;
+            setDiscountPrice(discountPrice);
+            setCouponCodeData(res.data.couponCode);
+            setCouponCode("");
+            toast.success("Coupon applied successfully!");
+          }
         }
-    };
+        if (res.data.couponCode === null) {
+          toast.error("Coupon code doesn't exist!");
+          setCouponCode("");
+        }
+      })
+      .catch(() => {
+        toast.error("Invalid coupon code!");
+      });
+  };
 
-    const subTotalPrice = cart.reduce(
-        (acc, item) => acc + item.qty * item.discountPrice,
-        0
-    );
-
-    // this is shipping cost variable
-    const shipping = subTotalPrice * 0.1; // 10%
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const name = couponCode;
-
-        await axios.get(`${server}/coupon/get-coupon-value/${name}`).then((res) => {
-
-            const shopId = res.data.couponCode?.shopId;
-
-            const couponCodeValue = res.data.couponCode?.value;
-
-            if (res.data.couponCode !== null) {
-                const isCouponValid =
-                    cart && cart.filter((item) => item.shopId === shopId);
-
-                if (isCouponValid.length === 0) {
-                    toast.error("Coupon code is not valid for this shop");
-                    setCouponCode("");
-                } else {
-
-                    const eligiblePrice = isCouponValid.reduce(
-                        (acc, item) => acc + item.qty * item.discountPrice,
-                        0
-                    );
-                    const discountPrice = (eligiblePrice * couponCodeValue) / 100;
-                    setDiscountPrice(discountPrice);
-                    setCouponCodeData(res.data.couponCode);
-                    setCouponCode("");
-                }
-            }
-            if (res.data.couponCode === null) {
-                toast.error("Coupon code doesn't exists!");
-                setCouponCode("");
-            }
-        });
-    };
-
-    const discountPercentenge = couponCodeData ? discountPrice : "";
-
-    const totalPrice = couponCodeData
-        ? (subTotalPrice + shipping - discountPercentenge).toFixed(2)
-        : (subTotalPrice + shipping).toFixed(2);
-
-    console.log(discountPercentenge);
-
-    return (
-        <div className="w-full flex flex-col items-center py-8">
-            <div className="w-[90%] 1000px:w-[70%] block 800px:flex">
-                <div className="w-full 800px:w-[65%]">
-                    <ShippingInfo
-                        user={user}
-                        country={country}
-                        setCountry={setCountry}
-                        city={city}
-                        setCity={setCity}
-                        userInfo={userInfo}
-                        setUserInfo={setUserInfo}
-                        address1={address1}
-                        setAddress1={setAddress1}
-                        address2={address2}
-                        setAddress2={setAddress2}
-                        zipCode={zipCode}
-                        setZipCode={setZipCode}
-                    />
-                </div>
-                <div className="w-full 800px:w-[35%] 800px:mt-0 mt-8">
-                    <CartData
-                        handleSubmit={handleSubmit}
-                        totalPrice={totalPrice}
-                        shipping={shipping}
-                        subTotalPrice={subTotalPrice}
-                        couponCode={couponCode}
-                        setCouponCode={setCouponCode}
-                        discountPercentenge={discountPercentenge}
-                    />
-                </div>
+  return (
+    <div className="bg-background min-h-screen py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Shipping Form */}
+          <div className="lg:col-span-2">
+            <div className="bg-card rounded-xl shadow-md overflow-hidden">
+              <div className="border-b border-border-gray p-6">
+                <h2 className="text-xl font-semibold text-text-primary">
+                  Shipping Information
+                </h2>
+                <p className="text-text-secondary text-sm mt-1">
+                  Enter your delivery address details
+                </p>
+              </div>
+              <ShippingInfo
+                user={user}
+                country={country}
+                setCountry={setCountry}
+                city={city}
+                setCity={setCity}
+                userInfo={userInfo}
+                setUserInfo={setUserInfo}
+                address1={address1}
+                setAddress1={setAddress1}
+                address2={address2}
+                setAddress2={setAddress2}
+                zipCode={zipCode}
+                setZipCode={setZipCode}
+                fullName={fullName}
+                setFullName={setFullName}
+                email={email}
+                setEmail={setEmail}
+                phoneNumber={phoneNumber}
+                setPhoneNumber={setPhoneNumber}
+              />
             </div>
-            <div
-                className={`${styles.button} w-[150px] 800px:w-[280px] mt-10`}
+          </div>
+
+          {/* Right Column - Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24">
+              <CartData
+                handleSubmit={handleSubmit}
+                totalPrice={totalPrice}
+                shipping={shipping}
+                subTotalPrice={subTotalPrice}
+                couponCode={couponCode}
+                setCouponCode={setCouponCode}
+                discountPercentage={discountPercentage}
+                cart={cart}
+              />
+
+              {/* Place Order Button */}
+              <button
                 onClick={paymentSubmit}
-            >
-                <h5 className="text-white">Go to Payment</h5>
+                className="w-full mt-4 bg-brand-orange hover:bg-orange-hover text-white py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
+              >
+                Proceed to Payment
+              </button>
             </div>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 };
 
 const ShippingInfo = ({
-    user,
-    country,
-    setCountry,
-    city,
-    setCity,
-    userInfo,
-    setUserInfo,
-    address1,
-    setAddress1,
-    address2,
-    setAddress2,
-    zipCode,
-    setZipCode,
+  user,
+  country,
+  setCountry,
+  city,
+  setCity,
+  userInfo,
+  setUserInfo,
+  address1,
+  setAddress1,
+  address2,
+  setAddress2,
+  zipCode,
+  setZipCode,
+  fullName,
+  setFullName,
+  email,
+  setEmail,
+  phoneNumber,
+  setPhoneNumber,
 }) => {
-    return (
-        <div className="w-full 800px:w-[95%] bg-white rounded-md p-5 pb-8">
-            <h5 className="text-[18px] font-[500]">Shipping Address</h5>
-            <br />
-            <form>
-                <div className="w-full flex pb-3">
-                    <div className="w-[50%]">
-                        <label className="block pb-2">Full Name</label>
-                        <input
-                            type="text"
-                            value={user && user.name}
-                            required
-                            className={`${styles.input} !w-[95%]`}
-                        />
-                    </div>
-                    <div className="w-[50%]">
-                        <label className="block pb-2">Email Address</label>
-                        <input
-                            type="email"
-                            value={user && user.email}
-                            required
-                            className={`${styles.input}`}
-                        />
-                    </div>
-                </div>
-
-                <div className="w-full flex pb-3">
-                    <div className="w-[50%]">
-                        <label className="block pb-2">Phone Number</label>
-                        <input
-                            type="number"
-                            required
-                            value={user && user.phoneNumber}
-                            className={`${styles.input} !w-[95%]`}
-                        />
-                    </div>
-                    <div className="w-[50%]">
-                        <label className="block pb-2">Zip Code</label>
-                        <input
-                            type="number"
-                            value={zipCode}
-                            onChange={(e) => setZipCode(e.target.value)}
-                            required
-                            className={`${styles.input}`}
-                        />
-                    </div>
-                </div>
-
-                <div className="w-full flex pb-3">
-                    <div className="w-[50%]">
-                        <label className="block pb-2">Country</label>
-                        <select
-                            className="w-[95%] border h-[40px] rounded-[5px]"
-                            value={country}
-                            onChange={(e) => setCountry(e.target.value)}
-                        >
-                            <option className="block pb-2" value="">
-                                Choose your country
-                            </option>
-                            {Country &&
-                                Country.getAllCountries().map((item) => (
-                                    <option key={item.isoCode} value={item.isoCode}>
-                                        {item.name}
-                                    </option>
-                                ))}
-                        </select>
-                    </div>
-                    <div className="w-[50%]">
-                        <label className="block pb-2">City</label>
-                        <select
-                            className="w-[95%] border h-[40px] rounded-[5px]"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                        >
-                            <option className="block pb-2" value="">
-                                Choose your City
-                            </option>
-                            {State &&
-                                State.getStatesOfCountry(country).map((item) => (
-                                    <option key={item.isoCode} value={item.isoCode}>
-                                        {item.name}
-                                    </option>
-                                ))}
-                        </select>
-                    </div>
-                </div>
-
-                <div className="w-full flex pb-3">
-                    <div className="w-[50%]">
-                        <label className="block pb-2">Address1</label>
-                        <input
-                            type="address"
-                            required
-                            value={address1}
-                            onChange={(e) => setAddress1(e.target.value)}
-                            className={`${styles.input} !w-[95%]`}
-                        />
-                    </div>
-                    <div className="w-[50%]">
-                        <label className="block pb-2">Address2</label>
-                        <input
-                            type="address"
-                            value={address2}
-                            onChange={(e) => setAddress2(e.target.value)}
-                            required
-                            className={`${styles.input}`}
-                        />
-                    </div>
-                </div>
-
-                <div></div>
-            </form>
-            <h5
-                className="text-[18px] cursor-pointer inline-block"
-                onClick={() => setUserInfo(!userInfo)}
-            >
-                Choose From saved address
-            </h5>
-            {userInfo && (
-                <div>
-                    {user &&
-                        user.addresses.map((item, index) => (
-                            <div className="w-full flex mt-1">
-                                <input
-                                    type="checkbox"
-                                    className="mr-3"
-                                    value={item.addressType}
-                                    onClick={() =>
-                                        setAddress1(item.address1) ||
-                                        setAddress2(item.address2) ||
-                                        setZipCode(item.zipCode) ||
-                                        setCountry(item.country) ||
-                                        setCity(item.city)
-                                    }
-                                />
-                                <h2>{item.addressType}</h2>
-                            </div>
-                        ))}
-                </div>
-            )}
+  return (
+    <div className="p-6">
+      <form className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Full Name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <AiOutlineUser className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Enter your full name"
+                required
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Email Address <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <AiOutlineMail className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
         </div>
-    );
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Phone Number <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <AiOutlinePhone className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Enter your phone number"
+                required
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Zip Code <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <BiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <input
+                type="text"
+                value={zipCode}
+                onChange={(e) => setZipCode(e.target.value)}
+                placeholder="Enter zip code"
+                required
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Country <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <AiOutlineGlobal className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <select
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none appearance-none"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+              >
+                <option value="">Select Country</option>
+                {Country &&
+                  Country.getAllCountries().map((item) => (
+                    <option key={item.isoCode} value={item.isoCode}>
+                      {item.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              City <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <AiOutlineEnvironment className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <select
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none appearance-none"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                disabled={!country}
+              >
+                <option value="">Select City</option>
+                {State &&
+                  State.getStatesOfCountry(country).map((item) => (
+                    <option key={item.isoCode} value={item.isoCode}>
+                      {item.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Address Line 1 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={address1}
+              onChange={(e) => setAddress1(e.target.value)}
+              placeholder="Street address"
+              required
+              className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Address Line 2 (Optional)
+            </label>
+            <input
+              type="text"
+              value={address2}
+              onChange={(e) => setAddress2(e.target.value)}
+              placeholder="Apartment, suite, etc."
+              className="w-full px-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+
+        {user && user.addresses && user.addresses.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setUserInfo(!userInfo)}
+              className="text-brand-orange hover:text-orange-hover text-sm font-medium transition-colors"
+            >
+              {userInfo ? "Hide saved addresses" : "Choose from saved addresses"}
+            </button>
+
+            {userInfo && (
+              <div className="mt-3 space-y-2 border border-border-gray rounded-lg p-3">
+                {user.addresses.map((item, index) => (
+                  <label key={index} className="flex items-center gap-3 cursor-pointer p-2 hover:bg-gray-50 rounded-lg">
+                    <input
+                      type="radio"
+                      name="savedAddress"
+                      className="w-4 h-4 text-brand-orange"
+                      onClick={() => {
+                        setAddress1(item.address1);
+                        setAddress2(item.address2);
+                        setZipCode(item.zipCode);
+                        setCountry(item.country);
+                        setCity(item.city);
+                      }}
+                    />
+                    <div>
+                      <p className="font-medium text-text-primary">{item.addressType}</p>
+                      <p className="text-sm text-text-secondary">{item.address1}, {item.address2}</p>
+                      <p className="text-sm text-text-secondary">{item.city}, {item.country} - {item.zipCode}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </form>
+    </div>
+  );
 };
 
 const CartData = ({
-    handleSubmit,
-    totalPrice,
-    shipping,
-    subTotalPrice,
-    couponCode,
-    setCouponCode,
-    discountPercentenge,
+  handleSubmit,
+  totalPrice,
+  shipping,
+  subTotalPrice,
+  couponCode,
+  setCouponCode,
+  discountPercentage,
+  cart,
 }) => {
-    return (
-        <div className="w-full bg-[#fff] rounded-md p-5 pb-8">
-            <div className="flex justify-between">
-                <h3 className="text-[16px] font-[400] text-[#000000a4]">subtotal:</h3>
-                <h5 className="text-[18px] font-[600]">${subTotalPrice}</h5>
-            </div>
-            <br />
-            <div className="flex justify-between">
-                <h3 className="text-[16px] font-[400] text-[#000000a4]">shipping:</h3>
-                <h5 className="text-[18px] font-[600]">${shipping.toFixed(2)}</h5>
-            </div>
-            <br />
-            <div className="flex justify-between border-b pb-3">
-                <h3 className="text-[16px] font-[400] text-[#000000a4]">Discount:</h3>
-                <h5 className="text-[18px] font-[600]">
-                    - {discountPercentenge ? "$" + discountPercentenge.toString() : null}
-                </h5>
-            </div>
-            <h5 className="text-[18px] font-[600] text-end pt-3">${totalPrice}</h5>
-            <br />
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="text"
-                    className={`${styles.input} h-[40px] pl-2`}
-                    placeholder="Coupoun code"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    required
-                />
-                <input
-                    className={`w-full h-[40px] border border-[#f63b60] text-center text-[#f63b60] rounded-[3px] mt-8 cursor-pointer`}
-                    required
-                    value="Apply code"
-                    type="submit"
-                />
-            </form>
+  return (
+    <div className="bg-card rounded-xl shadow-md overflow-hidden">
+      <div className="border-b border-border-gray p-6">
+        <h2 className="text-xl font-semibold text-text-primary">Order Summary</h2>
+        <p className="text-text-secondary text-sm mt-1">
+          {cart?.length || 0} items in your cart
+        </p>
+      </div>
+
+      <div className="p-6 space-y-4">
+        {/* Cart Items Preview */}
+        <div className="space-y-3 max-h-60 overflow-y-auto">
+          {cart &&
+            cart.slice(0, 3).map((item, idx) => (
+              <div key={idx} className="flex justify-between text-sm">
+                <span className="text-text-secondary">
+                  {item.name.length > 25 ? item.name.slice(0, 25) + "..." : item.name}{" "}
+                  <span className="text-text-primary">x{item.qty}</span>
+                </span>
+                <span className="text-text-primary font-medium">
+                  ${(item.qty * item.discountPrice).toFixed(2)}
+                </span>
+              </div>
+            ))}
+          {cart && cart.length > 3 && (
+            <p className="text-text-secondary text-xs text-center">
+              +{cart.length - 3} more items
+            </p>
+          )}
         </div>
-    );
+
+        {/* Price Breakdown */}
+        <div className="space-y-2 pt-3 border-t border-border-gray">
+          <div className="flex justify-between">
+            <span className="text-text-secondary">Subtotal</span>
+            <span className="text-text-primary">${subTotalPrice.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-text-secondary">Shipping</span>
+            <span className="text-success">${shipping.toFixed(2)}</span>
+          </div>
+          {discountPercentage > 0 && (
+            <div className="flex justify-between">
+              <span className="text-text-secondary">Discount</span>
+              <span className="text-red-500">-${discountPercentage.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between pt-2 border-t border-border-gray">
+            <span className="font-semibold text-text-primary">Total</span>
+            <span className="font-bold text-brand-orange text-xl">
+              ${totalPrice}
+            </span>
+          </div>
+        </div>
+
+        {/* Coupon Code */}
+        <form onSubmit={handleSubmit} className="pt-2">
+          <label className="block text-sm font-medium text-text-primary mb-2">
+            Apply Coupon Code
+          </label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <AiOutlineTag className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <input
+                type="text"
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+                placeholder="Enter coupon code"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+              />
+            </div>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-gray-100 hover:bg-brand-orange hover:text-white text-text-secondary rounded-lg transition-all duration-300"
+            >
+              Apply
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default Checkout;
