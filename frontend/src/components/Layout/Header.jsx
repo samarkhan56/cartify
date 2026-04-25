@@ -89,9 +89,9 @@ const Header = ({ activeHeading }) => {
               <Link to="/products" className="text-gray-700 hover:text-brand-orange transition-colors text-sm font-medium">
                 Latest
               </Link>
-              <Link to="/blog" className="text-gray-700 hover:text-brand-orange transition-colors text-sm font-medium">
+              {/* <Link to="/blog" className="text-gray-700 hover:text-brand-orange transition-colors text-sm font-medium">
                 Blog
-              </Link>
+              </Link> */}
               <Link to="/pages" className="text-gray-700 hover:text-brand-orange transition-colors text-sm font-medium">
                 Pages
               </Link>
@@ -103,9 +103,9 @@ const Header = ({ activeHeading }) => {
             {/* Right Section - HOT, Search, Icons, Sign In */}
             <div className="flex items-center gap-5">
               {/* HOT Badge */}
-              <div className="hidden md:flex items-center gap-1 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
+              {/* <div className="hidden md:flex items-center gap-1 bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">
                 <span>HOT</span>
-              </div>
+              </div> */}
 
               {/* Search */}
               <div className="relative">

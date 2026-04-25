@@ -20,7 +20,7 @@ const BestDeals = () => {
       {/* Section Header */}
       <div className="text-center mb-10">
         <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-brand-orange/10 text-brand-orange text-sm font-semibold mb-3 animate-fadeInUp">
-          <span className="text-base">🔥</span>
+          <span className="text-base"></span>
           <span>HOT DEALS FOR YOU</span>
         </div>
         <h2 className="text-3xl md:text-4xl font-bold text-text-primary mb-3 animate-fadeInUp">
