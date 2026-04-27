@@ -12,69 +12,52 @@ const { isAuthenticated, isAdmin } = require("../middleware/auth");
 
 const router = express.Router();
 
-// CREATE USER - Updated to make avatar optional
+// CREATE USER - NO EMAIL VERIFICATION (Auto-activate)
 router.post("/create-user", upload.single("file"), async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
     const userEmail = await User.findOne({ email });
 
     if (userEmail) {
-      // Delete uploaded file if it exists
       if (req.file) {
         const filename = req.file.filename;
         const filePath = `uploads/${filename}`;
         fs.unlink(filePath, (err) => {
-          if (err) {
-            console.log(err);
-          }
+          if (err) console.log(err);
         });
       }
       return next(new ErrorHandler("User already exists", 400));
     }
 
-    // Handle avatar - optional with default
     let fileUrl = "default-avatar.png";
     if (req.file) {
       fileUrl = path.join(req.file.filename);
     }
 
-    const user = {
+    // Create user directly (auto-activated, no email needed)
+    const newUser = await User.create({
       name: name,
       email: email,
       password: password,
       avatar: fileUrl,
-    };
+    });
 
-    const activationToken = createActivationToken(user);
-    const activationUrl = `http://localhost:3000/activation/${activationToken}`;
-
-    // send email to user
-    try {
-      await sendMail({
-        email: user.email,
-        subject: "Activate your account",
-        message: `Hello ${user.name}, please click on the link to activate your account: ${activationUrl}`,
-      });
-      res.status(201).json({
-        success: true,
-        message: `Please check your email: ${user.email} to activate your account!`,
-      });
-    } catch (err) {
-      return next(new ErrorHandler(err.message, 500));
-    }
+    // Send token and login automatically
+    sendToken(newUser, 201, res);
+    
   } catch (err) {
     return next(new ErrorHandler(err.message, 400));
   }
 });
 
-// create activation token
+// create activation token - FIXED
 const createActivationToken = (user) => {
-  return jwt.sign(user, process.env.ACTIVATION_SECRET, {
-    expiresIn: "5m",
+  return jwt.sign(user, process.env.JWT_SECRET, {  // Changed from ACTIVATION_SECRET to JWT_SECRET
+    expiresIn: "60m",
   });
 };
 
-// activate user account
+// activate user account - FIXED
 router.post(
   "/activation",
   catchAsyncErrors(async (req, res, next) => {
@@ -83,10 +66,10 @@ router.post(
 
       const newUser = jwt.verify(
         activation_token,
-        process.env.ACTIVATION_SECRET
+        process.env.JWT_SECRET  // Changed from ACTIVATION_SECRET to JWT_SECRET
       );
       if (!newUser) {
-        return next(new ErrorHandler("Invalid token", 400));
+        return next(new ErrorHandler("Invalid or expired token", 400));
       }
       const { name, email, password, avatar } = newUser;
 
@@ -95,12 +78,14 @@ router.post(
       if (user) {
         return next(new ErrorHandler("User already exists", 400));
       }
+      
       user = await User.create({
         name,
         email,
         avatar,
         password,
       });
+      
       sendToken(user, 201, res);
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
@@ -118,6 +103,7 @@ router.post(
       if (!email || !password) {
         return next(new ErrorHandler("Please provide all fields", 400));
       }
+      
       const user = await User.findOne({ email }).select("+password");
 
       if (!user) {
@@ -128,9 +114,10 @@ router.post(
 
       if (!isPasswordValid) {
         return next(
-          new ErrorHandler("Please provide the correct information", 400)
+          new ErrorHandler("Invalid email or password", 400)
         );
       }
+      
       sendToken(user, 201, res);
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
@@ -227,7 +214,6 @@ router.put(
     try {
       const existsUser = await User.findById(req.user.id);
 
-      // Only delete previous avatar if it's not the default avatar
       if (existsUser.avatar && existsUser.avatar !== "default-avatar.png") {
         const existAvatarPath = `uploads/${existsUser.avatar}`;
         if (fs.existsSync(existAvatarPath)) {

@@ -18,10 +18,11 @@ const productSchema = new mongoose.Schema({
   },
   originalPrice: {
     type: Number,
+    required: [true, "Please enter your original product price!"],
   },
   discountPrice: {
     type: Number,
-    required: [true, "Please enter your product price!"],
+    // REMOVED required - now optional
   },
   stock: {
     type: Number,

@@ -10,6 +10,7 @@ const shopSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, "Please enter your shop email address"],
+    unique: true,
   },
   password: {
     type: String,
@@ -25,7 +26,7 @@ const shopSchema = new mongoose.Schema({
     required: true,
   },
   phoneNumber: {
-    type: Number,
+    type: String,  // Changed from Number to String
     required: true,
   },
   role: {
@@ -34,10 +35,14 @@ const shopSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
-    required: true,
+    default: "",  // Empty string means use initials
+  },
+  avatarColor: {
+    type: String,
+    default: "#4ECDC4",
   },
   zipCode: {
-    type: Number,
+    type: String,  // Changed from Number to String (zip codes can have leading zeros)
     required: true,
   },
   withdrawMethod: {
@@ -74,6 +79,40 @@ const shopSchema = new mongoose.Schema({
   resetPasswordTime: Date,
 });
 
+// Generate avatar initials and color before saving
+shopSchema.pre("save", function(next) {
+  // Only generate if avatar is empty and name exists
+  if (!this.avatar && this.name) {
+    // Generate initials from shop name
+    const words = this.name.trim().split(' ');
+    if (words.length === 1) {
+      this.avatar = words[0].charAt(0).toUpperCase();
+    } else {
+      this.avatar = (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+    }
+    
+    // Generate consistent color based on shop name
+    const colors = [
+      '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2',
+      '#F8B739', '#5D9B9B', '#E8A87C', '#C38D9E', '#6C5B7B'
+    ];
+    
+    let hash = 0;
+    for (let i = 0; i < this.name.length; i++) {
+      hash = this.name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash % colors.length);
+    this.avatarColor = colors[index];
+  }
+  next();
+});
+
+// Virtual field to check if avatar is initials or image
+shopSchema.virtual('isInitialsAvatar').get(function() {
+  return this.avatar && this.avatar.length <= 2 && !this.avatar.includes('.');
+});
+
 // Hash password
 shopSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
@@ -84,12 +123,12 @@ shopSchema.pre("save", async function (next) {
 
 // jwt token
 shopSchema.methods.getJwtToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
-    expiresIn: process.env.JWT_EXPIRES,
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+    expiresIn: '7d',
   });
 };
 
-// comapre password
+// compare password
 shopSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

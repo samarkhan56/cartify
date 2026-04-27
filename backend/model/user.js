@@ -58,7 +58,7 @@ const userSchema = new mongoose.Schema({
   resetPasswordTime: Date,
 });
 
-//  Hash password
+// Hash password
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     next();
@@ -67,10 +67,10 @@ userSchema.pre("save", async function (next) {
   this.password = await bcrypt.hash(this.password, 10);
 });
 
-// jwt token
+// jwt token - FIXED VERSION
 userSchema.methods.getJwtToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET_KEY, {
-    expiresIn: process.env.JWT_EXPIRES,
+  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {  // Changed JWT_SECRET_KEY to JWT_SECRET
+    expiresIn: '7d',  // Changed from process.env.JWT_EXPIRES to '7d'
   });
 };
 

@@ -2,12 +2,18 @@ import { createReducer } from "@reduxjs/toolkit";
 
 const initialState = {
   isAuthenticated: false,
+  isSeller: false,
+  user: null,
+  seller: null,
+  loading: false,
+  sellerLoading: false,
+  error: null,
 };
 
 export const userReducer = createReducer(initialState, {
+  // ========== BUYER USER ACTIONS ==========
   LoadUserRequest: (state) => {
     state.loading = true;
-    // state.loading meaning: if loading is true, then the user is not authenticated
   },
   LoadUserSuccess: (state, action) => {
     state.isAuthenticated = true;
@@ -18,6 +24,21 @@ export const userReducer = createReducer(initialState, {
     state.loading = false;
     state.error = action.payload;
     state.isAuthenticated = false;
+  },
+
+  // ========== SELLER ACTIONS ==========
+  LoadSellerRequest: (state) => {
+    state.sellerLoading = true;
+  },
+  LoadSellerSuccess: (state, action) => {
+    state.isSeller = true;
+    state.sellerLoading = false;
+    state.seller = action.payload;
+  },
+  LoadSellerFail: (state, action) => {
+    state.isSeller = false;
+    state.sellerLoading = false;
+    state.error = action.payload;
   },
 
   // update user information
@@ -60,6 +81,7 @@ export const userReducer = createReducer(initialState, {
     state.addressloading = false;
     state.error = action.payload;
   },
+  
   // get all users --- admin
   getAllUsersRequest: (state) => {
     state.usersLoading = true;
@@ -73,9 +95,13 @@ export const userReducer = createReducer(initialState, {
     state.error = action.payload;
   },
 
+  // logout seller
+  LogoutSeller: (state) => {
+    state.isSeller = false;
+    state.seller = null;
+  },
+
   clearErrors: (state) => {
     state.error = null;
   },
 });
-
-// reducer -> logic (state change)

@@ -1,32 +1,39 @@
+require('dotenv').config();
+
+console.log('=== Environment Variables Check ===');
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅' : '❌');
+console.log('JWT_SECRET_KEY:', process.env.JWT_SECRET_KEY ? '✅' : '❌');
+console.log('ACTIVATION_TOKEN_SECRET:', process.env.ACTIVATION_TOKEN_SECRET ? '✅' : '❌');
+console.log('ACTIVATION_SECRET:', process.env.ACTIVATION_SECRET ? '✅' : '❌');
+console.log('===================================');
+
+
 const express = require("express");
 const ErrorHandler = require("./middleware/error");
 const connectDatabase = require("./db/Database");
 const app = express();
-
 const cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
+const dotenv = require("dotenv");
 
-// config
-if (process.env.NODE_ENV !== "PRODUCTION") {
-  require("dotenv").config({
-    path: "config/.env",
-  });
-}
+// Load .env from config folder
+dotenv.config({ path: path.join(__dirname, "config/.env") });
+
 // connect db
 connectDatabase();
 
 // create server
-const server = app.listen(process.env.PORT, () => {
-  console.log(`Server is running on http://localhost:${process.env.PORT}`);
+const server = app.listen(process.env.PORT || 8000, () => {
+  console.log(`Server is running on http://localhost:${process.env.PORT || 8000}`);
 });
 
 // middlewares
 app.use(express.json());
 app.use(cookieParser());
-// Enable CORS for all routes
 
+// Enable CORS
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -41,16 +48,6 @@ app.get("/test", (req, res) => {
 });
 
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
-
-// why bodyparser?
-// bodyparser is used to parse the data from the body of the request to the server (POST, PUT, DELETE, etc.)
-
-// config
-if (process.env.NODE_ENV !== "PRODUCTION") {
-  require("dotenv").config({
-    path: "config/.env",
-  });
-}
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
@@ -67,9 +64,8 @@ const order = require("./controller/order");
 const message = require("./controller/message");
 const conversation = require("./controller/conversation");
 const withdraw = require("./controller/withdraw");
-app.use("/api/v2/withdraw", withdraw);
 
-// end points
+app.use("/api/v2/withdraw", withdraw);
 app.use("/api/v2/user", user);
 app.use("/api/v2/conversation", conversation);
 app.use("/api/v2/message", message);
@@ -80,7 +76,7 @@ app.use("/api/v2/event", event);
 app.use("/api/v2/coupon", coupon);
 app.use("/api/v2/payment", payment);
 
-// it'for errhendel
+// error handler
 app.use(ErrorHandler);
 
 // Handling Uncaught Exceptions

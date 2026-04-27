@@ -24,6 +24,12 @@ router.post(
         const imageUrls = files.map((file) => `${file.filename}`);
 
         const productData = req.body;
+        
+        // If discountPrice is not provided, use originalPrice
+        if (!productData.discountPrice || productData.discountPrice === "") {
+          productData.discountPrice = productData.originalPrice;
+        }
+        
         productData.images = imageUrls;
         productData.shop = shop;
 

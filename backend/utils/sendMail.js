@@ -2,23 +2,21 @@ const nodemailer = require("nodemailer");
 
 const sendMail = async (options) => {
   const transporter = nodemailer.createTransport({
-    host: process.env.SMPT_HOST,
-    port: process.env.SMPT_PORT,
-    service: process.env.SMPT_SERVICE,
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: process.env.EMAIL_PORT || 587,
+    secure: false,
     auth: {
-      user: process.env.SMPT_MAIL,
-      pass: process.env.SMPT_PASSWORD,
-    },
-    tls: {
-      rejectUnauthorized: false,
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
 
   const mailOptions = {
-    from: process.env.SMPT_MAIL,
+    from: `"Cartify" <${process.env.EMAIL_USER}>`,
     to: options.email,
     subject: options.subject,
     text: options.message,
+    html: options.html,
   };
 
   await transporter.sendMail(mailOptions);

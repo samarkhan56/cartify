@@ -1,17 +1,19 @@
-import { useSelector } from "react-redux";
-import { Navigate } from "react-router-dom";
-import Loader from "../components/Layout/Loader";
+import React from 'react';
+import { useSelector } from 'react-redux';
+import { Navigate } from 'react-router-dom';
 
 const SellerProtectedRoute = ({ children }) => {
-  const { isLoading, isSeller } = useSelector((state) => state.seller);
-  if (isLoading === true) {
-    return <Loader />;
-  } else {
-    if (!isSeller) {
-      return <Navigate to={`/shop-login`} replace />;
-    }
-    return children;
+  const { isSeller, isLoading } = useSelector((state) => state.seller);
+  
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Loading...</div>;
   }
+  
+  if (!isSeller) {
+    return <Navigate to="/shop-login" replace />;
+  }
+  
+  return children;
 };
 
 export default SellerProtectedRoute;
