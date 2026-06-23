@@ -2,6 +2,9 @@ import { createReducer } from "@reduxjs/toolkit";
 
 const initialState = {
   isLoading: true,
+  isSeller: false,
+  seller: null,
+  error: null,
 };
 
 export const sellerReducer = createReducer(initialState, {
@@ -12,11 +15,13 @@ export const sellerReducer = createReducer(initialState, {
     state.isSeller = true;
     state.isLoading = false;
     state.seller = action.payload;
+    state.error = null;
   },
   LoadSellerFail: (state, action) => {
     state.isLoading = false;
     state.error = action.payload;
     state.isSeller = false;
+    state.seller = null;
   },
   // get all sellers ---admin
   getAllSellersRequest: (state) => {

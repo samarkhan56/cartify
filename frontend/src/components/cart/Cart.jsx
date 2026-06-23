@@ -1,25 +1,38 @@
 import React, { useState } from "react";
 import { RxCross1 } from "react-icons/rx";
-import styles from "../../styles/styles";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { IoBagHandleOutline } from "react-icons/io5";
 import { HiOutlineMinus, HiPlus } from "react-icons/hi";
 import { AiOutlineShoppingCart, AiOutlineDelete } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { backend_url } from "../../server";
-import { addTocart, removeFromCart } from "../../redux/actions/cart";
+import {
+  addTocart,
+  removeFromCart,
+  setAllCartItemsSelected,
+  toggleCartItemSelection,
+} from "../../redux/actions/cart";
 
 const Cart = ({ setOpenCart }) => {
-  const { cart } = useSelector((state) => state.cart);
+  const { cart, selectedCartItemIds } = useSelector((state) => state.cart);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const selectedItemIds =
+    selectedCartItemIds || cart.map((item) => item._id);
+
+  const selectedItems = cart.filter((item) =>
+    selectedItemIds.includes(item._id)
+  );
+  const allItemsSelected =
+    cart.length > 0 && selectedItems.length === cart.length;
 
   const removeFromCartHandler = (data) => {
     dispatch(removeFromCart(data));
     toast.info("Item removed from cart");
   };
 
-  const totalPrice = cart.reduce(
+  const totalPrice = selectedItems.reduce(
     (acc, item) => acc + item.qty * item.discountPrice,
     0
   );
@@ -29,11 +42,21 @@ const Cart = ({ setOpenCart }) => {
   };
 
   // Calculate savings
-  const originalTotal = cart.reduce(
+  const originalTotal = selectedItems.reduce(
     (acc, item) => acc + item.qty * (item.originalPrice || item.discountPrice),
     0
   );
   const savings = originalTotal - totalPrice;
+
+  const checkoutHandler = () => {
+    if (selectedItems.length === 0) {
+      toast.error("Select at least one product to checkout.");
+      return;
+    }
+
+    setOpenCart(false);
+    navigate("/checkout");
+  };
 
   return (
     <div className="fixed top-0 left-0 w-full bg-black/50 h-screen z-50 animate-fadeIn">
@@ -75,10 +98,25 @@ const Cart = ({ setOpenCart }) => {
           <>
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto">
-              {cart.map((item, index) => (
+              <label className="flex items-center gap-3 px-4 py-3 border-b border-border-gray text-sm font-medium text-text-primary cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={allItemsSelected}
+                  onChange={(event) =>
+                    dispatch(setAllCartItemsSelected(event.target.checked))
+                  }
+                  className="w-4 h-4 accent-orange-500"
+                />
+                Select all products
+              </label>
+              {cart.map((item) => (
                 <CartSingle
                   data={item}
-                  key={index}
+                  key={item._id}
+                  isSelected={selectedItemIds.includes(item._id)}
+                  onSelectionChange={() =>
+                    dispatch(toggleCartItemSelection(item._id))
+                  }
                   quantityChangeHandler={quantityChangeHandler}
                   removeFromCartHandler={removeFromCartHandler}
                 />
@@ -99,7 +137,9 @@ const Cart = ({ setOpenCart }) => {
               {/* Price Summary */}
               <div className="space-y-2 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-text-secondary">Subtotal</span>
+                  <span className="text-text-secondary">
+                    Subtotal ({selectedItems.length} selected)
+                  </span>
                   <span className="text-text-primary">${totalPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -115,11 +155,14 @@ const Cart = ({ setOpenCart }) => {
               </div>
 
               {/* Checkout Button */}
-              <Link to="/checkout" onClick={() => setOpenCart(false)}>
-                <button className="w-full bg-brand-orange hover:bg-orange-hover text-white py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105">
-                  Proceed to Checkout
-                </button>
-              </Link>
+              <button
+                type="button"
+                onClick={checkoutHandler}
+                disabled={selectedItems.length === 0}
+                className="w-full bg-brand-orange hover:bg-orange-hover disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-colors"
+              >
+                Proceed to Checkout ({selectedItems.length})
+              </button>
 
               {/* Continue Shopping */}
               <button
@@ -136,7 +179,13 @@ const Cart = ({ setOpenCart }) => {
   );
 };
 
-const CartSingle = ({ data, quantityChangeHandler, removeFromCartHandler }) => {
+const CartSingle = ({
+  data,
+  isSelected,
+  onSelectionChange,
+  quantityChangeHandler,
+  removeFromCartHandler,
+}) => {
   const [value, setValue] = useState(data.qty);
   const totalPrice = data.discountPrice * value;
 
@@ -163,6 +212,15 @@ const CartSingle = ({ data, quantityChangeHandler, removeFromCartHandler }) => {
   return (
     <div className="border-b border-border-gray p-4 hover:bg-gray-50 transition-colors">
       <div className="flex gap-3">
+        <label className="flex items-center cursor-pointer" title="Select for checkout">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={onSelectionChange}
+            aria-label={`Select ${data.name} for checkout`}
+            className="w-4 h-4 accent-orange-500"
+          />
+        </label>
         {/* Product Image */}
         <div className="w-24 h-24 bg-gray-50 rounded-lg overflow-hidden shrink-0">
           <img

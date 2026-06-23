@@ -1,13 +1,3 @@
-require('dotenv').config();
-
-console.log('=== Environment Variables Check ===');
-console.log('JWT_SECRET:', process.env.JWT_SECRET ? '✅' : '❌');
-console.log('JWT_SECRET_KEY:', process.env.JWT_SECRET_KEY ? '✅' : '❌');
-console.log('ACTIVATION_TOKEN_SECRET:', process.env.ACTIVATION_TOKEN_SECRET ? '✅' : '❌');
-console.log('ACTIVATION_SECRET:', process.env.ACTIVATION_SECRET ? '✅' : '❌');
-console.log('===================================');
-
-
 const express = require("express");
 const ErrorHandler = require("./middleware/error");
 const connectDatabase = require("./db/Database");
@@ -18,8 +8,11 @@ const cors = require("cors");
 const path = require("path");
 const dotenv = require("dotenv");
 
-// Load .env from config folder
-dotenv.config({ path: path.join(__dirname, "config/.env") });
+// Load environment variables with fallback:
+// 1) backend/.env
+// 2) backend/config/.env (legacy location)
+dotenv.config();
+dotenv.config({ path: path.join(__dirname, "config/.env"), override: false });
 
 // connect db
 connectDatabase();

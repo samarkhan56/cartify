@@ -62,7 +62,7 @@ const FAQPage = () => {
             questions: [
                 {
                     question: "What payment methods do you accept?",
-                    answer: "We accept all major credit cards (Visa, MasterCard, American Express), PayPal, Apple Pay, Google Pay, and Cash on Delivery (selected locations)."
+                    answer: "We accept major credit and debit cards through Stripe, plus Cash on Delivery where available."
                 },
                 {
                     question: "Is my payment information secure?",

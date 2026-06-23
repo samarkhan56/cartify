@@ -19,11 +19,13 @@ export const userReducer = createReducer(initialState, {
     state.isAuthenticated = true;
     state.loading = false;
     state.user = action.payload;
+    state.error = null;
   },
   LoadUserFail: (state, action) => {
     state.loading = false;
     state.error = action.payload;
     state.isAuthenticated = false;
+    state.user = null;
   },
 
   // ========== SELLER ACTIONS ==========
@@ -34,11 +36,13 @@ export const userReducer = createReducer(initialState, {
     state.isSeller = true;
     state.sellerLoading = false;
     state.seller = action.payload;
+    state.error = null;
   },
   LoadSellerFail: (state, action) => {
     state.isSeller = false;
     state.sellerLoading = false;
     state.error = action.payload;
+    state.seller = null;
   },
 
   // update user information

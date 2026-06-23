@@ -1,6 +1,9 @@
 import axios from "axios";
 import { server } from "../../server";
 
+const getErrorMessage = (error) =>
+  error?.response?.data?.message || error?.message || "Something went wrong";
+
 // create event
 export const createevent = (newForm) => async (dispatch) => {
   try {
@@ -22,7 +25,7 @@ export const createevent = (newForm) => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: "eventCreateFail",
-      payload: error.response.data.message,
+      payload: getErrorMessage(error),
     });
   }
 };
@@ -42,7 +45,7 @@ export const getAllEventsShop = (id) => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: "getAlleventsShopFailed",
-      payload: error.response.data.message,
+      payload: getErrorMessage(error),
     });
   }
 };
@@ -68,7 +71,7 @@ export const deleteEvent = (id) => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: "deleteeventFailed",
-      payload: error.response.data.message,
+      payload: getErrorMessage(error),
     });
   }
 };
@@ -88,7 +91,7 @@ export const getAllEvents = () => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: "getAlleventsFailed",
-      payload: error.response.data.message,
+      payload: getErrorMessage(error),
     });
   }
 };

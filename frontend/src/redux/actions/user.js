@@ -1,6 +1,9 @@
 import axios from "axios";
 import { server } from "../../server";
 
+const getErrorMessage = (error) =>
+  error?.response?.data?.message || error?.message || "Something went wrong";
+
 // load user
 export const loadUser = () => async (dispatch) => {
   try {
@@ -10,6 +13,15 @@ export const loadUser = () => async (dispatch) => {
     const { data } = await axios.get(`${server}/user/getuser`, {
       withCredentials: true,
     });
+
+    if (!data?.user) {
+      dispatch({
+        type: "LoadUserFail",
+        payload: null,
+      });
+      return;
+    }
+
     dispatch({
       type: "LoadUserSuccess",
       payload: data.user,
@@ -17,7 +29,7 @@ export const loadUser = () => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: "LoadUserFail",
-      payload: error.response.data.message,
+      payload: getErrorMessage(error),
     });
   }
 };
@@ -30,10 +42,18 @@ export const loadSeller = () => async (dispatch) => {
     const { data } = await axios.get(`${server}/shop/getSeller`, {
       withCredentials: true,
     });
+
+    if (!data?.seller) {
+      dispatch({
+        type: "LoadSellerFail",
+        payload: null,
+      });
+      return;
+    }
     
     dispatch({ type: 'LoadSellerSuccess', payload: data.seller });
   } catch (error) {
-    dispatch({ type: 'LoadSellerFail', payload: error.response.data.message });
+    dispatch({ type: 'LoadSellerFail', payload: getErrorMessage(error) });
   }
 };
 
@@ -64,7 +84,7 @@ export const updateUserInformation =
     } catch (error) {
       dispatch({
         type: "updateUserInfoFailed",
-        payload: error.response.data.message,
+        payload: getErrorMessage(error),
       });
     }
   };
@@ -101,7 +121,7 @@ export const updatUserAddress =
     } catch (error) {
       dispatch({
         type: "updateUserAddressFailed",
-        payload: error.response.data.message,
+        payload: getErrorMessage(error),
       });
     }
   };
@@ -128,7 +148,7 @@ export const deleteUserAddress = (id) => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: "deleteUserAddressFailed",
-      payload: error.response.data.message,
+      payload: getErrorMessage(error),
     });
   }
 };
@@ -151,7 +171,7 @@ export const getAllUsers = () => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: "getAllUsersFailed",
-      payload: error.response.data.message,
+      payload: getErrorMessage(error),
     });
   }
 };

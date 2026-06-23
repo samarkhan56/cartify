@@ -19,7 +19,12 @@ import { BiMapPin } from "react-icons/bi";
 
 const Checkout = () => {
   const { user } = useSelector((state) => state.user);
-  const { cart } = useSelector((state) => state.cart);
+  const { cart, selectedCartItemIds } = useSelector((state) => state.cart);
+  const selectedItemIds =
+    selectedCartItemIds || cart.map((item) => item._id);
+  const selectedCartItems = cart.filter((item) =>
+    selectedItemIds.includes(item._id)
+  );
   
   // State variables for form fields
   const [fullName, setFullName] = useState(user?.name || "");
@@ -40,7 +45,7 @@ const Checkout = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  const subTotalPrice = cart.reduce(
+  const subTotalPrice = selectedCartItems.reduce(
     (acc, item) => acc + item.qty * item.discountPrice,
     0
   );
@@ -52,6 +57,11 @@ const Checkout = () => {
     : (subTotalPrice + shipping).toFixed(2);
 
   const paymentSubmit = () => {
+    if (selectedCartItems.length === 0) {
+      toast.error("Select at least one product from your cart.");
+      return;
+    }
+
     if (
       fullName === "" ||
       email === "" ||
@@ -77,7 +87,7 @@ const Checkout = () => {
     };
 
     const orderData = {
-      cart,
+      cart: selectedCartItems,
       totalPrice,
       subTotalPrice,
       shipping,
@@ -102,7 +112,7 @@ const Checkout = () => {
 
         if (res.data.couponCode !== null) {
           const isCouponValid =
-            cart && cart.filter((item) => item.shopId === shopId);
+            selectedCartItems.filter((item) => item.shopId === shopId);
 
           if (isCouponValid.length === 0) {
             toast.error("Coupon code is not valid for this shop");
@@ -179,13 +189,14 @@ const Checkout = () => {
                 couponCode={couponCode}
                 setCouponCode={setCouponCode}
                 discountPercentage={discountPercentage}
-                cart={cart}
+                cart={selectedCartItems}
               />
 
               {/* Place Order Button */}
               <button
                 onClick={paymentSubmit}
-                className="w-full mt-4 bg-brand-orange hover:bg-orange-hover text-white py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
+                disabled={selectedCartItems.length === 0}
+                className="w-full mt-4 bg-brand-orange hover:bg-orange-hover disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-colors"
               >
                 Proceed to Payment
               </button>

@@ -13,6 +13,36 @@ router.post(
   catchAsyncErrors(async (req, res, next) => {
     try {
       const { cart, shippingAddress, user, totalPrice, paymentInfo } = req.body;
+      const requestedPaymentType = paymentInfo?.type;
+      const paymentTypeMap = {
+        "Cash On Delivery": "Cash On Delivery",
+        "Credit Card": "Stripe",
+        Stripe: "Stripe",
+      };
+      const paymentType = paymentTypeMap[requestedPaymentType];
+
+      if (!paymentType) {
+        return next(new ErrorHandler("Invalid payment method selected.", 400));
+      }
+
+      const isOnlinePayment = paymentType === "Stripe";
+      if (isOnlinePayment && !paymentInfo?.id) {
+        return next(new ErrorHandler("Payment transaction id is required.", 400));
+      }
+
+      const normalizedPaymentInfo = isOnlinePayment
+        ? {
+            id: paymentInfo.id,
+            status: paymentInfo.status || "succeeded",
+            type: paymentType,
+          }
+        : {
+            type: "Cash On Delivery",
+            status: "Pending",
+          };
+
+      const orderStatus = isOnlinePayment ? "Processing" : "Pending";
+      const paidAt = isOnlinePayment ? Date.now() : null;
 
       //   group cart items by shopId
       const shopItemsMap = new Map();
@@ -34,7 +64,9 @@ router.post(
           shippingAddress,
           user,
           totalPrice,
-          paymentInfo,
+          paymentInfo: normalizedPaymentInfo,
+          status: orderStatus,
+          paidAt,
         });
         orders.push(order);
       }

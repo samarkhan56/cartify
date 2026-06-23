@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import "./App.css";
 import Store from "./redux/store";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -57,7 +57,7 @@ import {
   AdminDashboardWithdraw,
 } from "./routes/AdminRoutes";
 
-import { ToastContainer, toast } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useEffect } from "react";
 import { loadSeller, loadUser } from "./redux/actions/user";
@@ -67,45 +67,22 @@ import SellerProtectedRoute from "./routes/SellerProtectedRoute";
 import { ShopHomePage } from "./ShopRoutes";
 import { getAllProducts } from "./redux/actions/product";
 import { getAllEvents } from "./redux/actions/event";
-import axios from "axios";
-import { server } from "./server";
-import { Elements } from "@stripe/react-stripe-js";
-import { loadStripe } from "@stripe/stripe-js";
 
 const App = () => {
-  const [stripeApikey, setStripeApiKey] = useState("");
-
-  async function getStripeApikey() {
-    const { data } = await axios.get(`${server}/payment/stripeapikey`);
-    setStripeApiKey(data.stripeApikey);
-  }
-
   useEffect(() => {
-    Store.dispatch(loadUser());
-    Store.dispatch(loadSeller());
-    Store.dispatch(getAllProducts());
-    Store.dispatch(getAllEvents());
-    getStripeApikey();
+    const dispatchStartupAction = (action) => {
+      Promise.resolve(Store.dispatch(action)).catch(() => {});
+    };
+
+    dispatchStartupAction(loadUser());
+    dispatchStartupAction(loadSeller());
+    dispatchStartupAction(getAllProducts());
+    dispatchStartupAction(getAllEvents());
   }, []);
 
   return (
     <BrowserRouter>
       <ScrollToTop /> {/* ➕ ADD THIS LINE */}
-      {stripeApikey && (
-        <Elements stripe={loadStripe(stripeApikey)}>
-          <Routes>
-            <Route
-              path="/payment"
-              element={
-                <ProtectedRoute>
-                  <PaymentPage />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </Elements>
-      )}
-
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -135,6 +112,14 @@ const App = () => {
           element={
             <ProtectedRoute>
               <CheckoutPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment"
+          element={
+            <ProtectedRoute>
+              <PaymentPage />
             </ProtectedRoute>
           }
         />

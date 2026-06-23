@@ -1,6 +1,9 @@
 import axios from "axios";
 import { server } from "../../server";
 
+const getErrorMessage = (error) =>
+  error?.response?.data?.message || error?.message || "Something went wrong";
+
 // get all orders of user
 export const getAllOrdersOfUser = (userId) => async (dispatch) => {
   try {
@@ -19,7 +22,7 @@ export const getAllOrdersOfUser = (userId) => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: "getAllOrdersUserFailed",
-      payload: error.response.data.message,
+      payload: getErrorMessage(error),
     });
   }
 };
@@ -42,7 +45,7 @@ export const getAllOrdersOfShop = (shopId) => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: "getAllOrdersShopFailed",
-      payload: error.response.data.message,
+      payload: getErrorMessage(error),
     });
   }
 };
@@ -65,7 +68,7 @@ export const getAllOrdersOfAdmin = () => async (dispatch) => {
   } catch (error) {
     dispatch({
       type: "adminAllOrdersFailed",
-      payload: error.response.data.message,
+      payload: getErrorMessage(error),
     });
   }
 };
