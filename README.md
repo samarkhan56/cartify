@@ -26,7 +26,6 @@ This project is built upon an open-source MERN Marketplace foundation and is bei
 - Socket.io (Real-time chat)
 
 ### Payment Integration
-- PayPal
 - Stripe
 - Cash on Delivery
 
