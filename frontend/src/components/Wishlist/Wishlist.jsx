@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { RxCross1 } from "react-icons/rx";
 import styles from "../../styles/styles";
-import { Link } from "react-router-dom";
 import { BsCartPlus } from "react-icons/bs";
 import { AiOutlineHeart } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
@@ -78,7 +77,7 @@ const Wishlist = ({ setOpenWishlist }) => {
 };
 
 const CartSingle = ({ data, removeFromWishlistHandler, addToCartHandler }) => {
-  const [value, setValue] = useState(1);
+  const value = 1;
   const totalPrice = data.discountPrice * value;
 
   return (

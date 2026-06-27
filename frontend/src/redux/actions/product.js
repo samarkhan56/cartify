@@ -11,7 +11,10 @@ export const createProduct = (newForm) => async (dispatch) => {
       type: "productCreateRequest",
     });
 
-    const config = { headers: { "Content-Type": "multipart/form-data" } };
+    const config = {
+      headers: { "Content-Type": "multipart/form-data" },
+      withCredentials: true,
+    };
 
     const { data } = await axios.post(
       `${server}/product/create-product`,
@@ -31,15 +34,23 @@ export const createProduct = (newForm) => async (dispatch) => {
 };
 
 // get All Products of a shop
-export const getAllProductsShop = (id) => async (dispatch) => {
+export const getAllProductsShop = (id, includeAll = false) => async (dispatch) => {
   try {
+    if (!id) {
+      return;
+    }
+
     dispatch({
       type: "getAllProductsShopRequest",
     });
 
-    const { data } = await axios.get(
-      `${server}/product/get-all-products-shop/${id}`
-    );
+    const endpoint = includeAll
+      ? `${server}/product/get-all-products-shop-dashboard/${id}`
+      : `${server}/product/get-all-products-shop/${id}`;
+
+    const { data } = await axios.get(endpoint, {
+      withCredentials: includeAll,
+    });
     dispatch({
       type: "getAllProductsShopSuccess",
       payload: data.products,
@@ -79,13 +90,23 @@ export const deleteProduct = (id) => async (dispatch) => {
 };
 
 // get all products
-export const getAllProducts = () => async (dispatch) => {
+export const getAllProducts = (filters = {}) => async (dispatch) => {
   try {
     dispatch({
       type: "getAllProductsRequest",
     });
 
-    const { data } = await axios.get(`${server}/product/get-all-products`);
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        params.set(key, value);
+      }
+    });
+
+    const query = params.toString();
+    const { data } = await axios.get(
+      `${server}/product/get-all-products${query ? `?${query}` : ""}`
+    );
     dispatch({
       type: "getAllProductsSuccess",
       payload: data.products,

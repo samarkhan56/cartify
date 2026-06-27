@@ -1,5 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { AiOutlineArrowRight, AiOutlineMoneyCollect, AiOutlineShoppingCart, AiOutlineShop, AiOutlineLineChart } from "react-icons/ai";
+import React, { useEffect } from "react";
+import {
+    AiOutlineArrowRight,
+    AiOutlineCheckCircle,
+    AiOutlineClockCircle,
+    AiOutlineLineChart,
+    AiOutlineMoneyCollect,
+    AiOutlineShoppingCart,
+    AiOutlineShop,
+    AiOutlineWarning,
+} from "react-icons/ai";
 import { Link } from "react-router-dom";
 import { MdBorderClear } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,17 +26,29 @@ const DashboardHero = () => {
     useEffect(() => {
         if (seller?._id) {
             dispatch(getAllOrdersOfShop(seller._id));
-            dispatch(getAllProductsShop(seller._id));
+            dispatch(getAllProductsShop(seller._id, true));
         }
-    }, [dispatch, seller]);
+    }, [dispatch, seller?._id]);
 
     const availableBalance = seller?.availableBalance?.toFixed(2) || "0.00";
 
-    // Calculate total sales
-    const totalSales = orders?.reduce((acc, order) => acc + order.totalPrice, 0) || 0;
-    
-    // Calculate pending orders
-    const pendingOrders = orders?.filter(order => order.status === "Processing").length || 0;
+    const totalSales = orders?.reduce((acc, order) => acc + Number(order.totalPrice || 0), 0) || 0;
+    const deliveredOrders = orders?.filter((order) => order.status === "Delivered").length || 0;
+    const pendingOrders = orders?.filter((order) => ["Pending", "Processing"].includes(order.status)).length || 0;
+    const refundOrders = orders?.filter((order) => String(order.status || "").toLowerCase().includes("refund")).length || 0;
+    const unpaidCodOrders = orders?.filter(
+        (order) =>
+            order.paymentInfo?.type === "Cash On Delivery" &&
+            order.paymentInfo?.status !== "Succeeded"
+    ).length || 0;
+    const lowStockProducts = products?.filter(
+        (product) => Number(product.stock || 0) > 0 && Number(product.stock || 0) <= 5
+    ) || [];
+    const outOfStockProducts = products?.filter((product) => Number(product.stock || 0) === 0).length || 0;
+    const pendingApprovalProducts = products?.filter((product) => product.approvalStatus === "pending").length || 0;
+    const approvedProducts = products?.filter(
+        (product) => !product.approvalStatus || product.approvalStatus === "approved"
+    ).length || 0;
 
     const getStatusColor = (status) => {
         switch(status) {
@@ -59,6 +80,17 @@ const DashboardHero = () => {
             flex: 0.5,
         },
         {
+            field: "payment",
+            headerName: "Payment",
+            minWidth: 150,
+            flex: 0.7,
+            renderCell: (params) => (
+                <span className={params.row.paymentStatus === "Succeeded" ? "text-green-600" : "text-orange-600"}>
+                    {params.value}
+                </span>
+            ),
+        },
+        {
             field: "total",
             headerName: "Total",
             type: "number",
@@ -88,7 +120,40 @@ const DashboardHero = () => {
         itemsQty: item.cart?.reduce((acc, item) => acc + item.qty, 0) || 0,
         total: item.totalPrice,
         status: item.status,
+        payment: item.paymentInfo?.type || "N/A",
+        paymentStatus: item.paymentInfo?.status,
     })) || [];
+
+    const metricCards = [
+        {
+            label: "Pending Orders",
+            value: pendingOrders,
+            note: `${deliveredOrders} delivered`,
+            icon: <AiOutlineClockCircle size={32} />,
+            tone: "text-yellow-600 bg-yellow-50",
+        },
+        {
+            label: "COD Unpaid",
+            value: unpaidCodOrders,
+            note: "Collect on delivery",
+            icon: <AiOutlineMoneyCollect size={32} />,
+            tone: "text-orange-600 bg-orange-50",
+        },
+        {
+            label: "Refunds",
+            value: refundOrders,
+            note: "Needs attention",
+            icon: <AiOutlineWarning size={32} />,
+            tone: "text-red-600 bg-red-50",
+        },
+        {
+            label: "Approved Products",
+            value: approvedProducts,
+            note: `${pendingApprovalProducts} pending approval`,
+            icon: <AiOutlineCheckCircle size={32} />,
+            tone: "text-green-600 bg-green-50",
+        },
+    ];
 
     return (
         <div className="w-full p-6 bg-gray-50 min-h-screen">
@@ -111,7 +176,7 @@ const DashboardHero = () => {
                     </div>
                     <Link to="/dashboard-withdraw-money">
                         <button className="mt-4 text-sm bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg transition-colors">
-                            Withdraw Money →
+                            Withdraw Money
                         </button>
                     </Link>
                 </div>
@@ -151,11 +216,55 @@ const DashboardHero = () => {
                     </div>
                     <Link to="/dashboard-products">
                         <button className="mt-4 text-sm text-orange-600 hover:text-orange-700 transition-colors">
-                            Manage Products →
+                            Manage Products
                         </button>
                     </Link>
                 </div>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+                {metricCards.map((card) => (
+                    <div key={card.label} className="bg-white rounded-xl shadow-md p-5 border border-gray-100">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-gray-500 text-sm">{card.label}</p>
+                                <h3 className="text-2xl font-bold text-gray-800">{card.value}</h3>
+                            </div>
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${card.tone}`}>
+                                {card.icon}
+                            </div>
+                        </div>
+                        <p className="text-gray-400 text-xs mt-2">{card.note}</p>
+                    </div>
+                ))}
+            </div>
+
+            {(lowStockProducts.length > 0 || outOfStockProducts > 0) && (
+                <div className="bg-white rounded-xl shadow-md border border-orange-100 p-5 mb-8">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 className="text-lg font-semibold text-gray-800">Stock Alerts</h2>
+                            <p className="text-sm text-gray-500">
+                                {lowStockProducts.length} low-stock products, {outOfStockProducts} out of stock
+                            </p>
+                        </div>
+                        <Link to="/dashboard-products" className="text-sm text-orange-600 hover:text-orange-700">
+                            Manage stock
+                        </Link>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                        {lowStockProducts.slice(0, 6).map((product) => (
+                            <div key={product._id} className="flex items-center justify-between border border-gray-100 rounded-lg p-3">
+                                <div className="min-w-0">
+                                    <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
+                                    <p className="text-xs text-gray-500">{product.category || "Uncategorized"}</p>
+                                </div>
+                                <span className="text-sm font-semibold text-orange-600">{product.stock} left</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Recent Orders Table */}
             <div className="bg-white rounded-xl shadow-md overflow-hidden">

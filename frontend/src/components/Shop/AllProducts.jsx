@@ -15,8 +15,10 @@ const AllProducts = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getAllProductsShop(seller._id));
-  }, [dispatch]);
+    if (seller?._id) {
+      dispatch(getAllProductsShop(seller._id, true));
+    }
+  }, [dispatch, seller?._id]);
 
   const handleDelete = (id) => {
     dispatch(deleteProduct(id));
@@ -50,6 +52,18 @@ const AllProducts = () => {
       headerName: "Sold out",
       type: "number",
       minWidth: 130,
+      flex: 0.6,
+    },
+    {
+      field: "approvalStatus",
+      headerName: "Approval",
+      minWidth: 120,
+      flex: 0.6,
+    },
+    {
+      field: "visibility",
+      headerName: "Visibility",
+      minWidth: 110,
       flex: 0.6,
     },
     {
@@ -100,6 +114,8 @@ const AllProducts = () => {
         price: "US$ " + item.discountPrice,
         Stock: item.stock,
         sold: item.sold_out,
+        approvalStatus: item.approvalStatus || "approved",
+        visibility: item.isActive === false ? "Hidden" : "Active",
       });
     });
 

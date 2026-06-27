@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import styles from "../../styles/styles";
 import {
   AiFillHeart,
   AiOutlineHeart,
@@ -9,11 +8,11 @@ import {
   AiOutlineMinus,
   AiOutlinePlus,
   AiFillStar,
-  AiOutlineStar,
   AiOutlineCar,
   AiOutlineReload,
   AiOutlineSafetyCertificate,
   AiOutlineCheckCircle,
+  AiOutlineQuestionCircle,
 } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllProductsShop } from "../../redux/actions/product";
@@ -37,16 +36,63 @@ const ProductDetails = ({ data }) => {
   const [count, setCount] = useState(1);
   const [click, setClick] = useState(false);
   const [select, setSelect] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
-    dispatch(getAllProductsShop(data && data?.shop._id));
+    dispatch(getAllProductsShop(data?.shop?._id));
     if (wishlist && wishlist.find((i) => i._id === data?._id)) {
       setClick(true);
     } else {
       setClick(false);
     }
-  }, [data, wishlist]);
+  }, [data, dispatch, wishlist]);
+
+  useEffect(() => {
+    if (!data?._id) {
+      return;
+    }
+
+    const recentlyViewedProduct = {
+      _id: data._id,
+      name: data.name,
+      brand: data.brand,
+      category: data.category,
+      discountPrice: data.discountPrice,
+      originalPrice: data.originalPrice,
+      images: data.images,
+      stock: data.stock,
+    };
+
+    try {
+      const storedProducts = JSON.parse(
+        localStorage.getItem("recentlyViewedProducts") || "[]"
+      );
+      const safeStoredProducts = Array.isArray(storedProducts)
+        ? storedProducts
+        : [];
+      const nextProducts = [
+        recentlyViewedProduct,
+        ...safeStoredProducts.filter((product) => product._id !== data._id),
+      ].slice(0, 8);
+
+      localStorage.setItem(
+        "recentlyViewedProducts",
+        JSON.stringify(nextProducts)
+      );
+    } catch (error) {
+      localStorage.setItem(
+        "recentlyViewedProducts",
+        JSON.stringify([recentlyViewedProduct])
+      );
+    }
+  }, [data]);
+
+  useEffect(() => {
+    setCount(1);
+    setSelect(0);
+    setSelectedOptions({});
+  }, [data?._id]);
 
   const removeFromWishlistHandler = (data) => {
     setClick(!click);
@@ -65,8 +111,10 @@ const ProductDetails = ({ data }) => {
     } else {
       if (data.stock < 1) {
         toast.error("Product stock limited!");
+      } else if (!allVariantsSelected) {
+        toast.error("Please select product options first.");
       } else {
-        const cartData = { ...data, qty: count };
+        const cartData = { ...data, qty: count, selectedOptions };
         dispatch(addTocart(cartData));
         toast.success("Item added to cart successfully!");
       }
@@ -127,6 +175,25 @@ const ProductDetails = ({ data }) => {
   const discountPercentage = data?.originalPrice > data?.discountPrice 
     ? Math.round(((data.originalPrice - data.discountPrice) / data.originalPrice) * 100)
     : 0;
+  const variants = useMemo(() => data?.variants || [], [data?.variants]);
+  const allVariantsSelected = variants.every(
+    (variant) => selectedOptions[variant.name]
+  );
+  const stockStatus =
+    data?.stock < 1
+      ? "Out of stock"
+      : data?.stock <= 5
+      ? `Only ${data.stock} left`
+      : `${data?.stock || 0} available`;
+  const verifiedReviewCount =
+    data?.reviews?.filter((review) => review.verifiedPurchase).length || 0;
+
+  const selectVariantOption = (variantName, option) => {
+    setSelectedOptions((current) => ({
+      ...current,
+      [variantName]: option,
+    }));
+  };
 
   return (
     <div className="bg-background min-h-screen py-8">
@@ -189,6 +256,20 @@ const ProductDetails = ({ data }) => {
                 <h1 className="text-2xl lg:text-3xl font-bold text-text-primary mb-3">
                   {data.name}
                 </h1>
+                {(data.brand || data.sku) && (
+                  <div className="flex flex-wrap gap-2 mb-3 text-sm text-text-secondary">
+                    {data.brand && (
+                      <span className="bg-gray-100 px-3 py-1 rounded-full">
+                        Brand: {data.brand}
+                      </span>
+                    )}
+                    {data.sku && (
+                      <span className="bg-gray-100 px-3 py-1 rounded-full">
+                        SKU: {data.sku}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {/* Rating */}
                 <div className="flex items-center gap-3 mb-4">
@@ -208,9 +289,35 @@ const ProductDetails = ({ data }) => {
                       ${data.originalPrice}
                     </span>
                   )}
-                  <span className="text-sm text-success font-medium">
-                    In Stock: {data.stock} units
+                  <span
+                    className={`text-sm font-medium ${
+                      data.stock < 1 || data.stock <= 5
+                        ? "text-red-500"
+                        : "text-success"
+                    }`}
+                  >
+                    {stockStatus}
                   </span>
+                </div>
+                <div className="mb-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="rounded-lg border border-border-gray bg-gray-50 p-3">
+                    <p className="text-xs text-text-secondary">Verified reviews</p>
+                    <p className="text-lg font-semibold text-text-primary">
+                      {verifiedReviewCount}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border-gray bg-gray-50 p-3">
+                    <p className="text-xs text-text-secondary">Sold by</p>
+                    <p className="text-sm font-semibold text-text-primary truncate">
+                      {data.shop?.name || "Cartify seller"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border-gray bg-gray-50 p-3">
+                    <p className="text-xs text-text-secondary">Protection</p>
+                    <p className="text-sm font-semibold text-text-primary">
+                      Secure checkout
+                    </p>
+                  </div>
                 </div>
 
                 {/* Description */}
@@ -218,7 +325,34 @@ const ProductDetails = ({ data }) => {
                   {data.description}
                 </p>
 
-                {/* Quantity Selector */}
+                {data.variants && data.variants.length > 0 && (
+                  <div className="mb-6 space-y-3">
+                    {data.variants.map((variant) => (
+                      <div key={variant.name}>
+                        <span className="text-text-primary font-medium">
+                          {variant.name}:
+                        </span>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {variant.options.map((option) => (
+                            <button
+                              type="button"
+                              key={option}
+                              onClick={() => selectVariantOption(variant.name, option)}
+                              className={`px-3 py-1 border rounded-full text-sm transition-colors ${
+                                selectedOptions[variant.name] === option
+                                  ? "border-brand-orange bg-brand-orange text-white"
+                                  : "border-border-gray text-text-secondary hover:border-brand-orange hover:text-brand-orange"
+                              }`}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="flex items-center gap-4 mb-6">
                   <span className="text-text-primary font-medium">Quantity:</span>
                   <div className="flex items-center border border-border-gray rounded-lg">
@@ -244,10 +378,11 @@ const ProductDetails = ({ data }) => {
                 <div className="flex flex-col sm:flex-row gap-4 mb-6">
                   <button
                     onClick={() => addToCartHandler(data._id)}
-                    className="flex-1 bg-brand-orange hover:bg-orange-hover text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
+                    disabled={data.stock < 1}
+                    className="flex-1 bg-brand-orange hover:bg-orange-hover disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center gap-2"
                   >
                     <AiOutlineShoppingCart size={20} />
-                    Add to Cart
+                    {data.stock < 1 ? "Out of Stock" : "Add to Cart"}
                   </button>
                   <button
                     onClick={() => click ? removeFromWishlistHandler(data) : addToWishlistHandler(data)}
@@ -316,6 +451,7 @@ const ProductDetails = ({ data }) => {
               products={products}
               totalReviewsLength={totalReviewsLength}
               averageRating={averageRating}
+              onAskSeller={handleMessageSubmit}
             />
           </div>
         </div>
@@ -329,14 +465,16 @@ const ProductDetailsInfo = ({
   products,
   totalReviewsLength,
   averageRating,
+  onAskSeller,
 }) => {
   const [active, setActive] = useState(1);
+  const reviews = data?.reviews || [];
 
   return (
     <div className="bg-gray-50 rounded-xl m-6 p-6">
       {/* Tab Headers */}
       <div className="flex flex-wrap gap-6 border-b border-border-gray pb-3">
-        {["Product Details", "Customer Reviews", "Seller Information"].map((tab, index) => (
+        {["Product Details", "Customer Reviews", "Product Q&A", "Seller Information"].map((tab, index) => (
           <button
             key={index}
             className={`relative pb-2 text-base font-medium transition-colors ${
@@ -361,6 +499,28 @@ const ProductDetailsInfo = ({
           <p className="text-text-secondary leading-relaxed whitespace-pre-line">
             {data.description}
           </p>
+          {data.specifications && data.specifications.length > 0 && (
+            <div className="mt-6">
+              <h3 className="font-semibold text-text-primary mb-3">
+                Specifications
+              </h3>
+              <div className="overflow-hidden border border-border-gray rounded-lg">
+                {data.specifications.map((specification, index) => (
+                  <div
+                    key={`${specification.name}-${index}`}
+                    className="grid grid-cols-1 sm:grid-cols-3 border-b border-border-gray last:border-b-0"
+                  >
+                    <div className="bg-gray-100 px-4 py-2 font-medium text-text-primary">
+                      {specification.name}
+                    </div>
+                    <div className="sm:col-span-2 px-4 py-2 text-text-secondary">
+                      {specification.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -368,24 +528,37 @@ const ProductDetailsInfo = ({
       {active === 2 && (
         <div className="py-6">
           <h3 className="font-semibold text-text-primary mb-4">Customer Reviews</h3>
-          {data.reviews && data.reviews.length > 0 ? (
-            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-              {data.reviews.map((item, index) => (
-                <div key={index} className="flex gap-3 p-4 bg-white rounded-lg">
-                  <img
-                    src={`${backend_url}/${item.user.avatar}`}
-                    alt=""
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-text-primary">{item.user.name}</span>
-                      <Ratings rating={item.rating} />
+          {reviews.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <ReviewSnapshot reviews={reviews} rating={data?.ratings} />
+              <div className="lg:col-span-2 space-y-4 max-h-[430px] overflow-y-auto pr-2">
+                {reviews.map((item, index) => (
+                  <div key={index} className="flex gap-3 p-4 bg-white rounded-lg">
+                    <img
+                      src={`${backend_url}/${item.user.avatar}`}
+                      alt=""
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="font-medium text-text-primary">{item.user.name}</span>
+                        {item.verifiedPurchase && (
+                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                            Verified purchase
+                          </span>
+                        )}
+                        <Ratings rating={item.rating} />
+                      </div>
+                      <p className="text-text-secondary text-sm">{item.comment}</p>
+                      {item.createdAt && (
+                        <p className="text-xs text-text-secondary mt-2">
+                          {item.createdAt.substring(0, 10)}
+                        </p>
+                      )}
                     </div>
-                    <p className="text-text-secondary text-sm">{item.comment}</p>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ) : (
             <div className="text-center py-8">
@@ -397,8 +570,12 @@ const ProductDetailsInfo = ({
         </div>
       )}
 
-      {/* Tab Content - Seller Info */}
       {active === 3 && (
+        <ProductQuestions data={data} onAskSeller={onAskSeller} />
+      )}
+
+      {/* Tab Content - Seller Info */}
+      {active === 4 && (
         <div className="py-6">
           <div className="flex items-center gap-4 mb-6">
             <img
@@ -439,6 +616,107 @@ const ProductDetailsInfo = ({
           </Link>
         </div>
       )}
+    </div>
+  );
+};
+
+const ReviewSnapshot = ({ reviews, rating }) => {
+  const totalReviews = reviews.length;
+  const verifiedCount = reviews.filter((review) => review.verifiedPurchase).length;
+  const distribution = [5, 4, 3, 2, 1].map((star) => {
+    const count = reviews.filter((review) => Math.round(review.rating) === star).length;
+    return {
+      star,
+      count,
+      percentage: totalReviews ? Math.round((count / totalReviews) * 100) : 0,
+    };
+  });
+
+  return (
+    <div className="bg-white rounded-lg p-4 h-fit">
+      <div className="text-center border-b border-border-gray pb-4 mb-4">
+        <p className="text-3xl font-bold text-text-primary">
+          {Number(rating || 0).toFixed(1)}
+        </p>
+        <div className="flex justify-center mt-1">
+          <Ratings rating={rating} />
+        </div>
+        <p className="text-sm text-text-secondary mt-1">
+          {totalReviews} review{totalReviews === 1 ? "" : "s"}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        {distribution.map((item) => (
+          <div key={item.star} className="grid grid-cols-[44px_1fr_36px] items-center gap-2 text-xs text-text-secondary">
+            <span>{item.star} star</span>
+            <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-brand-orange"
+                style={{ width: `${item.percentage}%` }}
+              />
+            </div>
+            <span className="text-right">{item.count}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+        {verifiedCount} verified purchase review
+        {verifiedCount === 1 ? "" : "s"}
+      </div>
+    </div>
+  );
+};
+
+const ProductQuestions = ({ data, onAskSeller }) => {
+  const questions = [
+    {
+      question: "Is this product currently available?",
+      answer:
+        data.stock > 0
+          ? `Yes. ${data.stock} unit${data.stock === 1 ? "" : "s"} available right now.`
+          : "This product is currently out of stock.",
+    },
+    {
+      question: "Who sells this product?",
+      answer: data.shop?.name
+        ? `This product is sold by ${data.shop.name}.`
+        : "This product is sold by a Cartify seller.",
+    },
+    {
+      question: "Can I request more information?",
+      answer: "Yes. You can contact the seller directly from this product page.",
+    },
+  ];
+
+  return (
+    <div className="py-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <div>
+          <h3 className="font-semibold text-text-primary">Product Q&A</h3>
+          <p className="text-sm text-text-secondary">
+            Common product questions based on current listing information.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onAskSeller}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-orange px-4 py-2 text-sm font-semibold text-white hover:bg-orange-hover"
+        >
+          <AiOutlineQuestionCircle size={18} />
+          Ask seller
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {questions.map((item) => (
+          <div key={item.question} className="rounded-lg bg-white p-4">
+            <h4 className="font-medium text-text-primary">{item.question}</h4>
+            <p className="mt-1 text-sm text-text-secondary">{item.answer}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

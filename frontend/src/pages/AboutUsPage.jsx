@@ -1,7 +1,7 @@
 import React from 'react'
 import Header from '../components/Layout/Header'
 import Footer from '../components/Layout/Footer'
-import { AiOutlineCheckCircle, AiOutlineCar, AiOutlineSafetyCertificate, AiOutlineCustomerService, AiOutlineGlobal } from 'react-icons/ai'
+import { AiOutlineCheckCircle, AiOutlineSafetyCertificate, AiOutlineCustomerService, AiOutlineGlobal } from 'react-icons/ai'
 import { FaHandsHelping } from 'react-icons/fa'
 import { MdDeliveryDining } from 'react-icons/md'
 

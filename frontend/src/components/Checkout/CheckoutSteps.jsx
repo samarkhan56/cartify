@@ -9,7 +9,7 @@ const CheckoutSteps = ({ active }) => {
   ]
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className="max-w-3xl mx-auto px-4 py-4 sm:py-8">
       <div className="flex items-center justify-between">
         {steps.map((step, index) => (
           <React.Fragment key={step.id}>
@@ -17,7 +17,7 @@ const CheckoutSteps = ({ active }) => {
             <div className="flex flex-col items-center">
               <div
                 className={`
-                  w-10 h-10 rounded-full flex items-center justify-center text-lg font-semibold
+                  w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-lg font-semibold
                   transition-all duration-300
                   ${active >= step.id 
                     ? 'bg-brand-orange text-white shadow-lg shadow-brand-orange/30' 
@@ -41,7 +41,7 @@ const CheckoutSteps = ({ active }) => {
             {index < steps.length - 1 && (
               <div
                 className={`
-                  flex-1 h-0.5 mx-2 transition-all duration-300
+                  flex-1 h-0.5 mx-1 sm:mx-2 transition-all duration-300
                   ${active > step.id ? 'bg-brand-orange' : 'bg-gray-200'}
                 `}
               />

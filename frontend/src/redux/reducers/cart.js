@@ -15,8 +15,9 @@ const initialState = {
   ),
 };
 
-export const cartReducer = createReducer(initialState, {
-  addToCart: (state, action) => {
+export const cartReducer = createReducer(initialState, (builder) => {
+  builder
+  .addCase("addToCart", (state, action) => {
     const item = action.payload;
     const selectedItemIds =
       state.selectedCartItemIds || state.cart.map((cartItem) => cartItem._id);
@@ -42,10 +43,10 @@ export const cartReducer = createReducer(initialState, {
         selectedCartItemIds: [...selectedItemIds, item._id],
       };
     }
-  },
+  })
 
   // Remove from cart
-  removeFromCart: (state, action) => {
+  .addCase("removeFromCart", (state, action) => {
     return {
       ...state,
       cart: state.cart.filter((i) => i._id !== action.payload),
@@ -55,9 +56,9 @@ export const cartReducer = createReducer(initialState, {
         (id) => id !== action.payload
       ),
     };
-  },
+  })
 
-  toggleCartItemSelection: (state, action) => {
+  .addCase("toggleCartItemSelection", (state, action) => {
     const itemId = action.payload;
     const selectedItemIds =
       state.selectedCartItemIds || state.cart.map((item) => item._id);
@@ -66,15 +67,15 @@ export const cartReducer = createReducer(initialState, {
     state.selectedCartItemIds = isSelected
       ? selectedItemIds.filter((id) => id !== itemId)
       : [...selectedItemIds, itemId];
-  },
+  })
 
-  setAllCartItemsSelected: (state, action) => {
+  .addCase("setAllCartItemsSelected", (state, action) => {
     state.selectedCartItemIds = action.payload
       ? state.cart.map((item) => item._id)
       : [];
-  },
+  })
 
-  removePurchasedCartItems: (state, action) => {
+  .addCase("removePurchasedCartItems", (state, action) => {
     const purchasedItemIds = action.payload;
     state.cart = state.cart.filter(
       (item) => !purchasedItemIds.includes(item._id)
@@ -84,5 +85,5 @@ export const cartReducer = createReducer(initialState, {
     ).filter(
       (id) => !purchasedItemIds.includes(id)
     );
-  },
+  });
 });

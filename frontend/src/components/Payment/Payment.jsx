@@ -59,6 +59,7 @@ const Payment = ({ isStripeAvailable = false }) => {
       subTotalPrice: orderData.subTotalPrice,
       shipping: orderData.shipping,
       discountPrice: orderData.discountPrice,
+      couponCode: orderData.couponCode,
     };
   }, [orderData, user]);
 
@@ -75,8 +76,43 @@ const Payment = ({ isStripeAvailable = false }) => {
       withCredentials: true,
     };
 
-    await axios.post(`${server}/order/create-order`, orderPayload, config);
-    localStorage.setItem("latestOrder", JSON.stringify(orderPayload));
+    const { data } = await axios.post(
+      `${server}/order/create-order`,
+      orderPayload,
+      config
+    );
+    const confirmedOrders = data.orders || [];
+    const confirmedCart = confirmedOrders.flatMap((confirmedOrder) =>
+      confirmedOrder.cart || []
+    );
+    const confirmedOrderData = {
+      ...orderPayload,
+      orders: confirmedOrders,
+      orderIds: confirmedOrders.map((confirmedOrder) => confirmedOrder._id),
+      cart: confirmedCart.length ? confirmedCart : order.cart,
+      subTotalPrice: confirmedOrders.reduce(
+        (total, confirmedOrder) =>
+          total + Number(confirmedOrder.subTotalPrice || 0),
+        0
+      ),
+      shipping: confirmedOrders.reduce(
+        (total, confirmedOrder) =>
+          total + Number(confirmedOrder.shippingPrice || 0),
+        0
+      ),
+      discountPrice: confirmedOrders.reduce(
+        (total, confirmedOrder) =>
+          total + Number(confirmedOrder.discountPrice || 0),
+        0
+      ),
+      totalPrice: confirmedOrders.reduce(
+        (total, confirmedOrder) => total + Number(confirmedOrder.totalPrice || 0),
+        0
+      ),
+      paymentInfo,
+    };
+
+    localStorage.setItem("latestOrder", JSON.stringify(confirmedOrderData));
     dispatch(
       removePurchasedCartItems(order.cart.map((item) => item._id))
     );
@@ -106,7 +142,7 @@ const Payment = ({ isStripeAvailable = false }) => {
     <div className="bg-background min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-2 lg:order-1">
             <div className="bg-card rounded-xl shadow-md overflow-hidden">
               <div className="border-b border-border-gray p-6">
                 <h2 className="text-xl font-semibold text-text-primary">
@@ -129,7 +165,7 @@ const Payment = ({ isStripeAvailable = false }) => {
             </div>
           </div>
 
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 order-1 lg:order-2">
             <CartData orderData={orderData} />
           </div>
         </div>
@@ -202,7 +238,7 @@ const PaymentInfo = ({
                 )}
               </span>
               <span className="text-brand-orange">{method.icon}</span>
-              <span>
+              <span className="min-w-0">
                 <span className="block font-semibold text-text-primary">
                   {method.name}
                 </span>
@@ -242,7 +278,7 @@ const PaymentInfo = ({
         );
       })}
 
-      <div className="flex items-center justify-center gap-2 text-sm text-text-secondary pt-4 border-t border-border-gray">
+      <div className="flex items-center justify-center gap-2 text-sm text-text-secondary pt-4 border-t border-border-gray text-center">
         <AiOutlineSafety size={16} className="text-success" />
         <span>Your payment information is secure and encrypted</span>
       </div>
@@ -404,7 +440,9 @@ const CartData = ({ orderData }) => {
         <h2 className="text-xl font-semibold text-text-primary">
           Order Summary
         </h2>
-        <p className="text-text-secondary text-sm">Review your order details</p>
+        <p className="text-text-secondary text-sm">
+          {cart.length} selected item{cart.length === 1 ? "" : "s"}
+        </p>
       </div>
       <div className="p-6 space-y-4">
         <div className="space-y-2 max-h-48 overflow-y-auto">

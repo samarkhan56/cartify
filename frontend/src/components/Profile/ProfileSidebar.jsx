@@ -3,10 +3,6 @@ import {
   AiOutlineLogin, 
   AiOutlineMessage, 
   AiOutlineUser, 
-  AiOutlineShoppingCart,
-  AiOutlineHistory,
-  AiOutlineKey,
-  AiOutlineHome
 } from "react-icons/ai";
 import { RiLockPasswordLine } from "react-icons/ri";
 import { HiOutlineReceiptRefund, HiOutlineShoppingBag } from "react-icons/hi";

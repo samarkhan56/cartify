@@ -16,14 +16,13 @@ import {
     FaFutbol,
     FaCar,
     FaBabyCarriage,
-    FaUtensils,
     FaRing,
     FaPlug,
     FaTree,
     FaChair,
     FaBriefcase
 } from "react-icons/fa";
-import { GiLipstick, GiSunglasses, GiNecklace } from "react-icons/gi";
+import { GiLipstick, GiSunglasses } from "react-icons/gi";
 import { MdKitchen, MdToys } from "react-icons/md";
 
 const DropDown = ({ categoriesData, setDropDown }) => {

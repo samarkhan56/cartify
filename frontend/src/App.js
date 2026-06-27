@@ -1,72 +1,76 @@
-import React from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import "./App.css";
 import Store from "./redux/store";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop"; // ➕ ADD THIS
-import {
-  LoginPage,
-  SignupPage,
-  ActivationPage,
-  HomePage,
-  ProductsPage,
-  BestSellingPage,
-  EventsPage,
-  FAQPage,
-  CheckoutPage,
-  PaymentPage,
-  OrderSuccessPage,
-  ProductDetailsPage,
-  ProfilePage,
-  ShopCreatePage,
-  SellerActivationPage,
-  ShopLoginPage,
-  OrderDetailsPage,
-  TrackOrderPage,
-  UserInbox,
-} from "./routes/Routes";
-import AboutUsPage from "./pages/AboutUsPage";
-import ContactUsPage from "./pages/ContactUsPage";
-import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
-import TermsPage from "./pages/TermsPage";
-import ShippingInfoPage from "./pages/ShippingInfoPage";
-import ReturnsPage from "./pages/ReturnsPage";
-
-import {
-  ShopDashboardPage,
-  ShopCreateProduct,
-  ShopAllProducts,
-  ShopCreateEvents,
-  ShopAllEvents,
-  ShopAllCoupouns,
-  ShopPreviewPage,
-  ShopAllOrders,
-  ShopOrderDetails,
-  ShopAllRefunds,
-  ShopSettingsPage,
-  ShopWithDrawMoneyPage,
-  ShopInboxPage,
-} from "./routes/ShopRoutes";
-
-import {
-  AdminDashboardPage,
-  AdminDashboardUsers,
-  AdminDashboardSellers,
-  AdminDashboardOrders,
-  AdminDashboardProducts,
-  AdminDashboardEvents,
-  AdminDashboardWithdraw,
-} from "./routes/AdminRoutes";
-
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useEffect } from "react";
 import { loadSeller, loadUser } from "./redux/actions/user";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import ProtectedAdminRoute from "./routes/ProtectedAdminRoute";
 import SellerProtectedRoute from "./routes/SellerProtectedRoute";
-import { ShopHomePage } from "./ShopRoutes";
 import { getAllProducts } from "./redux/actions/product";
 import { getAllEvents } from "./redux/actions/event";
+
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const SignupPage = lazy(() => import("./pages/SignupPage"));
+const ActivationPage = lazy(() => import("./pages/ActivationPage"));
+const HomePage = lazy(() => import("./pages/HomePage"));
+const ProductsPage = lazy(() => import("./pages/ProductsPage"));
+const BestSellingPage = lazy(() => import("./pages/BestSellingPage"));
+const EventsPage = lazy(() => import("./pages/EventsPage"));
+const FAQPage = lazy(() => import("./pages/FAQPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const PaymentPage = lazy(() => import("./pages/PaymentPage"));
+const OrderSuccessPage = lazy(() => import("./pages/OrderSuccessPage"));
+const ProductDetailsPage = lazy(() => import("./pages/ProductDetailsPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const ShopCreatePage = lazy(() => import("./pages/ShopCreate"));
+const SellerActivationPage = lazy(() => import("./pages/SellerActivationPage"));
+const ShopLoginPage = lazy(() => import("./pages/ShopLoginPage"));
+const OrderDetailsPage = lazy(() => import("./pages/OrderDetailsPage"));
+const TrackOrderPage = lazy(() => import("./pages/TrackOrderPage"));
+const UserInbox = lazy(() => import("./pages/UserInbox"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const AboutUsPage = lazy(() => import("./pages/AboutUsPage"));
+const ContactUsPage = lazy(() => import("./pages/ContactUsPage"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const TermsPage = lazy(() => import("./pages/TermsPage"));
+const ShippingInfoPage = lazy(() => import("./pages/ShippingInfoPage"));
+const ReturnsPage = lazy(() => import("./pages/ReturnsPage"));
+
+const ShopDashboardPage = lazy(() => import("./pages/Shop/ShopDashboardPage"));
+const ShopCreateProduct = lazy(() => import("./pages/Shop/ShopCreateProduct"));
+const ShopAllProducts = lazy(() => import("./pages/Shop/ShopAllProducts"));
+const ShopCreateEvents = lazy(() => import("./pages/Shop/ShopCreateEvents"));
+const ShopAllEvents = lazy(() => import("./pages/Shop/ShopAllEvents"));
+const ShopAllCoupouns = lazy(() => import("./pages/Shop/ShopAllCoupouns"));
+const ShopPreviewPage = lazy(() => import("./pages/Shop/ShopPreviewPage"));
+const ShopAllOrders = lazy(() => import("./pages/Shop/ShopAllOrders"));
+const ShopOrderDetails = lazy(() => import("./pages/Shop/ShopOrderDetails"));
+const ShopAllRefunds = lazy(() => import("./pages/Shop/ShopAllRefunds"));
+const ShopSettingsPage = lazy(() => import("./pages/Shop/ShopSettingsPage"));
+const ShopWithDrawMoneyPage = lazy(() =>
+  import("./pages/Shop/ShopWithDrawMoneyPage")
+);
+const ShopInboxPage = lazy(() => import("./pages/Shop/ShopInboxPage"));
+const ShopHomePage = lazy(() => import("./pages/Shop/ShopHomePage"));
+
+const AdminDashboardPage = lazy(() => import("./pages/AdminDashboardPage"));
+const AdminDashboardUsers = lazy(() => import("./pages/AdminDashboardUsers"));
+const AdminDashboardSellers = lazy(() => import("./pages/AdminDashboardSellers"));
+const AdminDashboardOrders = lazy(() => import("./pages/AdminDashboardOrders"));
+const AdminDashboardProducts = lazy(() => import("./pages/AdminDashboardProducts"));
+const AdminDashboardEvents = lazy(() => import("./pages/AdminDashboardEvents"));
+const AdminDashboardWithdraw = lazy(() =>
+  import("./pages/AdminDashboardWithdraw")
+);
+
+const RouteLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="h-10 w-10 rounded-full border-2 border-brand-orange border-t-transparent animate-spin" />
+  </div>
+);
 
 const App = () => {
   useEffect(() => {
@@ -83,7 +87,8 @@ const App = () => {
   return (
     <BrowserRouter>
       <ScrollToTop /> {/* ➕ ADD THIS LINE */}
-      <Routes>
+      <Suspense fallback={<RouteLoader />}>
+        <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/sign-up" element={<SignupPage />} />
@@ -139,6 +144,15 @@ const App = () => {
           element={
             <ProtectedRoute>
               <UserInbox />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/notifications"
+          element={
+            <ProtectedRoute>
+              <NotificationsPage />
             </ProtectedRoute>
           }
         />
@@ -336,7 +350,8 @@ const App = () => {
             </ProtectedAdminRoute>
           }
         />
-      </Routes>
+        </Routes>
+      </Suspense>
       <ToastContainer
         position="bottom-center"
         autoClose={5000}

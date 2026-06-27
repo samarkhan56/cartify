@@ -10,10 +10,18 @@ exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
   if (!token) {
     return next(new ErrorHandler("Please login to continue", 401));
   }
-  // FIXED: Changed JWT_SECRET_KEY to JWT_SECRET
+
+  if (!process.env.JWT_SECRET) {
+    return next(new ErrorHandler("Authentication is not configured", 500));
+  }
+
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
   req.user = await User.findById(decoded.id);
+  if (!req.user) {
+    return next(new ErrorHandler("User account no longer exists", 401));
+  }
+
   next();
 });
 
@@ -23,19 +31,33 @@ exports.isSeller = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Please login to continue", 401));
   }
 
-  // FIXED: Changed JWT_SECRET_KEY to JWT_SECRET
+  if (!process.env.JWT_SECRET) {
+    return next(new ErrorHandler("Authentication is not configured", 500));
+  }
+
   const decoded = jwt.verify(seller_token, process.env.JWT_SECRET);
 
   req.seller = await Shop.findById(decoded.id);
+  if (!req.seller) {
+    return next(new ErrorHandler("Seller account no longer exists", 401));
+  }
+
+  if (req.seller.accountStatus === "suspended") {
+    return next(new ErrorHandler("Seller account is suspended", 403));
+  }
 
   next();
 });
 
 exports.isAdmin = (...roles) => {
   return (req, res, next) => {
+    if (!req.user) {
+      return next(new ErrorHandler("Please login to continue", 401));
+    }
+
     if (!roles.includes(req.user.role)) {
       return next(
-        new ErrorHandler(`${req.user.role} can not access this resources!`)
+        new ErrorHandler("You do not have permission to access this resource", 403)
       );
     }
     next();

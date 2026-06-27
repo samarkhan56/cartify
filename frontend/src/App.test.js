@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 
 const mockAxios = {
   delete: jest.fn(() => Promise.resolve({ data: {} })),
@@ -39,11 +39,30 @@ const App = require("./App").default;
 const { Provider } = require("react-redux");
 const Store = require("./redux/store").default;
 
-test("renders the Cartify app shell", () => {
-  const { container } = render(
-    <Provider store={Store}>
-      <App />
-    </Provider>
-  );
+jest.setTimeout(15000);
+
+test("renders the Cartify app shell", async () => {
+  let container;
+
+  await act(async () => {
+    const rendered = render(
+      <Provider store={Store}>
+        <App />
+      </Provider>
+    );
+    container = rendered.container;
+  });
+
+  await waitFor(() => {
+    expect(mockAxios.get).toHaveBeenCalled();
+  });
+  await act(async () => {
+    await screen.findByRole(
+      "heading",
+      { name: /Elevate Your Style/i },
+      { timeout: 10000 }
+    );
+  });
+
   expect(container).toBeInTheDocument();
 });

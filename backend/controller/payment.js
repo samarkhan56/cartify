@@ -2,14 +2,7 @@ const express = require("express");
 const router = express.Router();
 const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ErrorHandler = require("../utils/ErrorHandler");
-
-const getStripeClient = () => {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey || !secretKey.startsWith("sk_")) {
-    return null;
-  }
-  return require("stripe")(secretKey);
-};
+const getStripeClient = require("../utils/stripe");
 
 const parseAmount = (amount) => {
   const parsedAmount = Number(amount);

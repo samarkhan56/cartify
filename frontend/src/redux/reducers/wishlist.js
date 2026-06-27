@@ -6,8 +6,9 @@ const initialState = {
     : [],
 };
 
-export const wishlistReducer = createReducer(initialState, {
-  addToWishlist: (state, action) => {
+export const wishlistReducer = createReducer(initialState, (builder) => {
+  builder
+  .addCase("addToWishlist", (state, action) => {
     const item = action.payload;
     const isItemExist = state.wishlist.find((i) => i._id === item._id);
     if (isItemExist) {
@@ -23,12 +24,12 @@ export const wishlistReducer = createReducer(initialState, {
         wishlist: [...state.wishlist, item],
       };
     }
-  },
+  })
 
-  removeFromWishlist: (state, action) => {
+  .addCase("removeFromWishlist", (state, action) => {
     return {
       ...state,
       wishlist: state.wishlist.filter((i) => i._id !== action.payload),
     };
-  },
+  });
 });

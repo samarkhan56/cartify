@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import ProductCard from "../ProductCard/ProductCard";
-import { AiFillStar, AiOutlineStar } from "react-icons/ai";
+import { AiFillStar } from "react-icons/ai";
 
 const FeaturedProduct = () => {
   const { allProducts } = useSelector((state) => state.products);

@@ -4,8 +4,9 @@ import Footer from "../components/Layout/Footer";
 import Header from "../components/Layout/Header";
 import Lottie from "react-lottie";
 import animationData from "../Assests/animations/107043-success.json";
-import { AiOutlineShopping, AiOutlinePrinter, AiOutlineMail, AiOutlineHome } from "react-icons/ai";
+import { AiOutlineDownload, AiOutlineShopping, AiOutlinePrinter, AiOutlineHome } from "react-icons/ai";
 import { useSelector } from "react-redux";
+import { backend_url } from "../server";
 
 const OrderSuccessPage = () => {
     const { user } = useSelector((state) => state.user);
@@ -13,16 +14,11 @@ const OrderSuccessPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Get order data from localStorage
         const latestOrder = localStorage.getItem("latestOrder");
-        console.log("Raw order data from localStorage:", latestOrder);
         
         if (latestOrder) {
             const parsedOrder = JSON.parse(latestOrder);
-            console.log("Parsed order data:", parsedOrder);
             setOrderData(parsedOrder);
-        } else {
-            console.log("No order data found in localStorage");
         }
     }, []);
 
@@ -39,8 +35,37 @@ const OrderSuccessPage = () => {
         window.print();
     };
 
-    const handleEmailOrder = () => {
-        alert("Order details will be sent to your email shortly!");
+    const handleDownloadReceipt = () => {
+        const receiptLines = [
+            "Cartify Receipt",
+            `Order: ${orderNumbers}`,
+            `Date: ${new Date().toLocaleString()}`,
+            `Customer: ${user?.name || orderData?.shippingAddress?.fullName || "Customer"}`,
+            `Payment: ${orderData?.paymentInfo?.type || "Cash on Delivery"}`,
+            "",
+            "Items:",
+            ...(orderData?.cart || []).map(
+                (item) =>
+                    `${item.name} x ${item.qty} - $${(toNumber(item.qty) * toNumber(item.discountPrice)).toFixed(2)}`
+            ),
+            "",
+            `Subtotal: $${subtotal.toFixed(2)}`,
+            `Shipping: $${shipping.toFixed(2)}`,
+            `Discount: $${discount.toFixed(2)}`,
+            `Total: $${total.toFixed(2)}`,
+        ];
+
+        const blob = new Blob([receiptLines.join("\n")], {
+            type: "text/plain;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `cartify-receipt-${orderNumbers.replace(/[^a-z0-9]/gi, "-")}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     const handleGoToHome = () => {
@@ -78,7 +103,10 @@ const OrderSuccessPage = () => {
     const total = toNumber(orderData?.totalPrice) || toNumber(subtotal + shipping - discount);
     const itemCount = orderData?.cart?.length || 0;
 
-    console.log("Calculated values - Subtotal:", subtotal, "Shipping:", shipping, "Discount:", discount, "Total:", total);
+    const orderNumbers =
+        orderData?.orderIds?.length > 0
+            ? orderData.orderIds.map((id) => `#${id.slice(-8).toUpperCase()}`).join(", ")
+            : "#PENDING";
 
     return (
         <>
@@ -107,7 +135,7 @@ const OrderSuccessPage = () => {
                         <div className="flex justify-between items-center">
                             <span className="text-text-secondary">Order Number:</span>
                             <span className="font-mono text-sm text-text-primary">
-                                #{Math.random().toString(36).substring(2, 12).toUpperCase()}
+                                {orderNumbers}
                             </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -166,7 +194,7 @@ const OrderSuccessPage = () => {
                                 <div key={index} className="flex justify-between items-center py-2 border-b border-border-gray last:border-0">
                                     <div className="flex items-center gap-3">
                                         <img
-                                            src={`http://localhost:8000${item?.images?.[0]}`}
+                                            src={`${backend_url}${item?.images?.[0]}`}
                                             alt={item.name}
                                             className="w-12 h-12 rounded-md object-cover"
                                             onError={(e) => {
@@ -228,11 +256,11 @@ const OrderSuccessPage = () => {
                         Print Receipt
                     </button>
                     <button
-                        onClick={handleEmailOrder}
+                        onClick={handleDownloadReceipt}
                         className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 border-2 border-border-gray text-text-secondary hover:border-brand-orange hover:text-brand-orange rounded-lg font-medium transition-all duration-300"
                     >
-                        <AiOutlineMail size={18} />
-                        Email Order
+                        <AiOutlineDownload size={18} />
+                        Download Receipt
                     </button>
                 </div>
 

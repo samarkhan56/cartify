@@ -1,7 +1,7 @@
 import React from 'react'
 import Header from '../components/Layout/Header'
 import Footer from '../components/Layout/Footer'
-import { AiOutlineSafetyCertificate, AiOutlineLock, AiOutlineCheckCircle } from 'react-icons/ai'
+import { AiOutlineSafetyCertificate } from 'react-icons/ai'
 
 const PrivacyPolicyPage = () => {
     return (

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import styles from "../../styles/styles";
 import { Country, State } from "country-state-city";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -14,6 +13,7 @@ import {
   AiOutlineGlobal,
   AiOutlineEnvironment,
   AiOutlineTag,
+  AiOutlineShoppingCart,
 } from "react-icons/ai";
 import { BiMapPin } from "react-icons/bi";
 
@@ -92,6 +92,7 @@ const Checkout = () => {
       subTotalPrice,
       shipping,
       discountPrice,
+      couponCode: couponCodeData?.name || "",
       shippingAddress,
       user,
     };
@@ -140,11 +141,11 @@ const Checkout = () => {
   };
 
   return (
-    <div className="bg-background min-h-screen py-8">
+    <div className="bg-background min-h-screen py-8 pb-28 lg:pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Shipping Form */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-2 lg:order-1">
             <div className="bg-card rounded-xl shadow-md overflow-hidden">
               <div className="border-b border-border-gray p-6">
                 <h2 className="text-xl font-semibold text-text-primary">
@@ -179,8 +180,8 @@ const Checkout = () => {
           </div>
 
           {/* Right Column - Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24">
+          <div className="lg:col-span-1 order-1 lg:order-2">
+            <div className="lg:sticky lg:top-24">
               <CartData
                 handleSubmit={handleSubmit}
                 totalPrice={totalPrice}
@@ -196,12 +197,29 @@ const Checkout = () => {
               <button
                 onClick={paymentSubmit}
                 disabled={selectedCartItems.length === 0}
-                className="w-full mt-4 bg-brand-orange hover:bg-orange-hover disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-colors"
+                className="hidden lg:block w-full mt-4 bg-brand-orange hover:bg-orange-hover disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 rounded-lg font-semibold transition-colors"
               >
                 Proceed to Payment
               </button>
             </div>
           </div>
+        </div>
+      </div>
+      <div className="fixed left-0 right-0 bottom-0 z-40 border-t border-border-gray bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] lg:hidden">
+        <div className="max-w-7xl mx-auto flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-text-secondary">
+              {selectedCartItems.length} selected
+            </p>
+            <p className="text-lg font-bold text-brand-orange">${totalPrice}</p>
+          </div>
+          <button
+            onClick={paymentSubmit}
+            disabled={selectedCartItems.length === 0}
+            className="shrink-0 bg-brand-orange hover:bg-orange-hover disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-5 py-3 rounded-lg font-semibold transition-colors"
+          >
+            Payment
+          </button>
         </div>
       </div>
     </div>
@@ -431,10 +449,19 @@ const CartData = ({
   return (
     <div className="bg-card rounded-xl shadow-md overflow-hidden">
       <div className="border-b border-border-gray p-6">
-        <h2 className="text-xl font-semibold text-text-primary">Order Summary</h2>
-        <p className="text-text-secondary text-sm mt-1">
-          {cart?.length || 0} items in your cart
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-text-primary">
+              Order Summary
+            </h2>
+            <p className="text-text-secondary text-sm mt-1">
+              {cart?.length || 0} selected item{cart?.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <span className="w-10 h-10 rounded-full bg-brand-orange/10 text-brand-orange flex items-center justify-center">
+            <AiOutlineShoppingCart size={20} />
+          </span>
+        </div>
       </div>
 
       <div className="p-6 space-y-4">

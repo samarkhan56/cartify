@@ -9,6 +9,9 @@ const catchAsyncErrors = require("../middleware/catchAsyncErrors");
 const ErrorHandler = require("../utils/ErrorHandler");
 const sendShopToken = require("../utils/shopToken");
 
+const SELLER_VERIFICATION_STATUSES = ["pending", "approved", "rejected"];
+const SELLER_ACCOUNT_STATUSES = ["active", "suspended"];
+
 // CREATE SHOP - DIRECT REGISTRATION (NO EMAIL VERIFICATION NEEDED)
 router.post("/create-shop", async (req, res, next) => {
   try {
@@ -61,6 +64,12 @@ router.post(
       if (!isPasswordValid) {
         return next(
           new ErrorHandler("Invalid email or password", 400)
+        );
+      }
+
+      if (user.accountStatus === "suspended") {
+        return next(
+          new ErrorHandler("This seller account is suspended. Contact admin support.", 403)
         );
       }
 
@@ -240,6 +249,59 @@ router.get(
       res.status(201).json({
         success: true,
         sellers,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// UPDATE SELLER MODERATION STATUS - ADMIN ONLY
+router.put(
+  "/admin-update-seller-status/:id",
+  isAuthenticated,
+  isAdmin("Admin"),
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { verificationStatus, accountStatus, rejectionReason } = req.body;
+      const seller = await Shop.findById(req.params.id);
+
+      if (!seller) {
+        return next(new ErrorHandler("Seller is not available with this id", 404));
+      }
+
+      if (
+        verificationStatus &&
+        !SELLER_VERIFICATION_STATUSES.includes(verificationStatus)
+      ) {
+        return next(new ErrorHandler("Invalid seller verification status.", 400));
+      }
+
+      if (accountStatus && !SELLER_ACCOUNT_STATUSES.includes(accountStatus)) {
+        return next(new ErrorHandler("Invalid seller account status.", 400));
+      }
+
+      if (verificationStatus) {
+        seller.verificationStatus = verificationStatus;
+        seller.isVerified = verificationStatus === "approved";
+        seller.approvedAt =
+          verificationStatus === "approved" ? Date.now() : seller.approvedAt;
+        seller.rejectionReason =
+          verificationStatus === "rejected" ? rejectionReason || "" : "";
+      }
+
+      if (accountStatus) {
+        seller.accountStatus = accountStatus;
+        seller.suspendedAt =
+          accountStatus === "suspended" ? Date.now() : undefined;
+      }
+
+      await seller.save({ validateBeforeSave: false });
+
+      res.status(200).json({
+        success: true,
+        seller,
+        message: "Seller status updated successfully!",
       });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));

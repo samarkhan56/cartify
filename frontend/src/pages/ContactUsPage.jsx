@@ -212,16 +212,16 @@ const ContactUsPage = () => {
                             <h3 className="text-xl font-semibold text-[#111827] mb-4">Connect With Us</h3>
                             <p className="text-[#6B7280] mb-4">Follow us on social media for updates, promotions, and more.</p>
                             <div className="flex gap-4">
-                                <a href="#" className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white hover:bg-[#EA580C] transition-colors">
+                                <a href="https://www.facebook.com" target="_blank" rel="noreferrer" aria-label="Cartify on Facebook" className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white hover:bg-[#EA580C] transition-colors">
                                     <FaFacebook size={20} />
                                 </a>
-                                <a href="#" className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white hover:bg-[#EA580C] transition-colors">
+                                <a href="https://www.twitter.com" target="_blank" rel="noreferrer" aria-label="Cartify on Twitter" className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white hover:bg-[#EA580C] transition-colors">
                                     <FaTwitter size={20} />
                                 </a>
-                                <a href="#" className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white hover:bg-[#EA580C] transition-colors">
+                                <a href="https://www.instagram.com" target="_blank" rel="noreferrer" aria-label="Cartify on Instagram" className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white hover:bg-[#EA580C] transition-colors">
                                     <FaInstagram size={20} />
                                 </a>
-                                <a href="#" className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white hover:bg-[#EA580C] transition-colors">
+                                <a href="https://www.youtube.com" target="_blank" rel="noreferrer" aria-label="Cartify on YouTube" className="w-10 h-10 bg-[#F97316] rounded-full flex items-center justify-center text-white hover:bg-[#EA580C] transition-colors">
                                     <FaYoutube size={20} />
                                 </a>
                             </div>

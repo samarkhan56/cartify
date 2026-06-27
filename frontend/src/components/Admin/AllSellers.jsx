@@ -31,6 +31,20 @@ const AllSellers = () => {
     dispatch(getAllSellers());
   };
 
+  const handleStatusUpdate = async (id, payload) => {
+    try {
+      const { data } = await axios.put(
+        `${server}/shop/admin-update-seller-status/${id}`,
+        payload,
+        { withCredentials: true }
+      );
+      toast.success(data.message);
+      dispatch(getAllSellers());
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update seller status.");
+    }
+  };
+
   const columns = [
     { field: "id", headerName: "Seller ID", minWidth: 150, flex: 0.7 },
 
@@ -61,6 +75,61 @@ const AllSellers = () => {
       type: "text",
       minWidth: 130,
       flex: 0.8,
+    },
+    {
+      field: "verificationStatus",
+      headerName: "Verification",
+      minWidth: 130,
+      flex: 0.7,
+    },
+    {
+      field: "accountStatus",
+      headerName: "Account",
+      minWidth: 110,
+      flex: 0.6,
+    },
+    {
+      field: "moderation",
+      flex: 1.4,
+      minWidth: 260,
+      headerName: "Moderation",
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex gap-2">
+          <Button
+            size="small"
+            onClick={() =>
+              handleStatusUpdate(params.id, { verificationStatus: "approved" })
+            }
+          >
+            Approve
+          </Button>
+          <Button
+            size="small"
+            onClick={() =>
+              handleStatusUpdate(params.id, {
+                verificationStatus: "rejected",
+                rejectionReason: "Rejected by admin review",
+              })
+            }
+          >
+            Reject
+          </Button>
+          <Button
+            size="small"
+            onClick={() =>
+              handleStatusUpdate(params.id, {
+                accountStatus:
+                  params.row.accountStatus === "suspended"
+                    ? "active"
+                    : "suspended",
+              })
+            }
+          >
+            {params.row.accountStatus === "suspended" ? "Activate" : "Suspend"}
+          </Button>
+        </div>
+      ),
     },
     {
       field: "  ",
@@ -109,6 +178,8 @@ const AllSellers = () => {
         email: item?.email,
         joinedAt: item.createdAt.slice(0, 10),
         address: item.address,
+        verificationStatus: item.verificationStatus || "approved",
+        accountStatus: item.accountStatus || "active",
       });
     });
 

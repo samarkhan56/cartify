@@ -7,6 +7,14 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
 const dotenv = require("dotenv");
+const paymentWebhook = require("./controller/paymentWebhook");
+const {
+  apiRateLimiter,
+  authRateLimiter,
+  getAllowedOrigins,
+  paymentRateLimiter,
+  securityHeaders,
+} = require("./middleware/security");
 
 // Load environment variables with fallback:
 // 1) backend/.env
@@ -23,13 +31,30 @@ const server = app.listen(process.env.PORT || 8000, () => {
 });
 
 // middlewares
-app.use(express.json());
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+app.use(securityHeaders);
+
+app.use(
+  "/api/v2/payment/webhook",
+  express.raw({ type: "application/json", limit: "1mb" }),
+  paymentWebhook
+);
+app.use(express.json({ limit: process.env.JSON_BODY_LIMIT || "1mb" }));
 app.use(cookieParser());
 
 // Enable CORS
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin(origin, callback) {
+      const allowedOrigins = getAllowedOrigins();
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
@@ -40,7 +65,7 @@ app.get("/test", (req, res) => {
   res.send("Hello World!");
 });
 
-app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "1mb" }));
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
@@ -57,11 +82,26 @@ const order = require("./controller/order");
 const message = require("./controller/message");
 const conversation = require("./controller/conversation");
 const withdraw = require("./controller/withdraw");
+const notification = require("./controller/notification");
+
+app.use("/api/v2", apiRateLimiter);
+app.use(
+  [
+    "/api/v2/user/login-user",
+    "/api/v2/user/create-user",
+    "/api/v2/user/activation",
+    "/api/v2/shop/login-shop",
+    "/api/v2/shop/create-shop",
+  ],
+  authRateLimiter
+);
+app.use("/api/v2/payment/process", paymentRateLimiter);
 
 app.use("/api/v2/withdraw", withdraw);
 app.use("/api/v2/user", user);
 app.use("/api/v2/conversation", conversation);
 app.use("/api/v2/message", message);
+app.use("/api/v2/notification", notification);
 app.use("/api/v2/order", order);
 app.use("/api/v2/shop", shop);
 app.use("/api/v2/product", product);

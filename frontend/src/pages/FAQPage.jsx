@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import Header from '../components/Layout/Header'
 import Footer from '../components/Layout/Footer'
-import { AiOutlinePlus, AiOutlineMinus, AiOutlineSearch, AiOutlineTrophy, AiOutlineSafety, AiOutlineCar, AiOutlineReload } from 'react-icons/ai'
+import { AiOutlinePlus, AiOutlineMinus, AiOutlineSearch, AiOutlineReload } from 'react-icons/ai'
 import { FaShippingFast, FaHeadset, FaLock } from 'react-icons/fa'
 
 const FAQPage = () => {

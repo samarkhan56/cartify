@@ -9,7 +9,6 @@ import {
 } from "../../redux/actions/user";
 import { AiOutlineArrowRight, AiOutlineCamera, AiOutlineDelete, AiOutlineMail, AiOutlinePhone, AiOutlineUser } from 'react-icons/ai';
 import { Link } from 'react-router-dom';
-import styles from "../../styles/styles";
 import { DataGrid } from "@material-ui/data-grid";
 import { Button } from "@material-ui/core";
 import { RxCross1 } from 'react-icons/rx'
@@ -27,7 +26,6 @@ const ProfileContent = ({ active }) => {
     const [email, setEmail] = useState(user && user.email);
     const [phoneNumber, setPhoneNumber] = useState(user && user.phoneNumber);
     const [password, setPassword] = useState("");
-    const [avatar, setAvatar] = useState(null);
     const [isUpdating, setIsUpdating] = useState(false);
 
     const dispatch = useDispatch();
@@ -51,9 +49,6 @@ const ProfileContent = ({ active }) => {
     }
 
     const handleImage = async (e) => {
-        const file = e.target.files[0];
-        setAvatar(file);
-
         const formData = new FormData();
         formData.append("image", e.target.files[0]);
 
@@ -64,7 +59,7 @@ const ProfileContent = ({ active }) => {
                 },
                 withCredentials: true,
             })
-            .then((response) => {
+            .then(() => {
                 dispatch(loadUser());
                 toast.success("Avatar updated successfully!");
             })

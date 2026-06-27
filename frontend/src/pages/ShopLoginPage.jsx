@@ -26,7 +26,7 @@ const ShopLoginPage = () => {
         setIsLoading(true);
         
         try {
-            const { data } = await axios.post(`${server}/shop/login-shop`, {
+            await axios.post(`${server}/shop/login-shop`, {
                 email,
                 password,
             }, { withCredentials: true });

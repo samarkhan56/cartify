@@ -1,26 +1,44 @@
 import { Button } from "@material-ui/core";
 import { DataGrid } from "@material-ui/data-grid";
 import React, { useEffect } from "react";
-import { AiOutlineDelete, AiOutlineEye } from "react-icons/ai";
-import { useDispatch, useSelector } from "react-redux";
+import { AiOutlineEye } from "react-icons/ai";
 import { Link } from "react-router-dom";
-import { getAllProductsShop } from "../../redux/actions/product";
-import { deleteProduct } from "../../redux/actions/product";
-import Loader from "../Layout/Loader";
 import axios from "axios";
 import { server } from "../../server";
 import { useState } from "react";
+import { toast } from "react-toastify";
 
 const AllProducts = () => {
   const [data, setData] = useState([]);
 
   useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = () => {
     axios
       .get(`${server}/product/admin-all-products`, { withCredentials: true })
       .then((res) => {
         setData(res.data.products);
+      })
+      .catch((error) => {
+        toast.error(error.response?.data?.message || "Failed to load products.");
       });
-  }, []);
+  };
+
+  const handleStatusUpdate = async (id, payload) => {
+    try {
+      const { data } = await axios.put(
+        `${server}/product/admin-update-product-status/${id}`,
+        payload,
+        { withCredentials: true }
+      );
+      toast.success(data.message);
+      loadProducts();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update product status.");
+    }
+  };
 
   const columns = [
     { field: "id", headerName: "Product Id", minWidth: 150, flex: 0.7 },
@@ -50,6 +68,58 @@ const AllProducts = () => {
       type: "number",
       minWidth: 130,
       flex: 0.6,
+    },
+    {
+      field: "approvalStatus",
+      headerName: "Approval",
+      minWidth: 120,
+      flex: 0.6,
+    },
+    {
+      field: "visibility",
+      headerName: "Visibility",
+      minWidth: 110,
+      flex: 0.6,
+    },
+    {
+      field: "moderation",
+      flex: 1.4,
+      minWidth: 260,
+      headerName: "Moderation",
+      sortable: false,
+      renderCell: (params) => (
+        <div className="flex gap-2">
+          <Button
+            size="small"
+            onClick={() =>
+              handleStatusUpdate(params.id, { approvalStatus: "approved" })
+            }
+          >
+            Approve
+          </Button>
+          <Button
+            size="small"
+            onClick={() =>
+              handleStatusUpdate(params.id, {
+                approvalStatus: "rejected",
+                rejectionReason: "Rejected by admin review",
+              })
+            }
+          >
+            Reject
+          </Button>
+          <Button
+            size="small"
+            onClick={() =>
+              handleStatusUpdate(params.id, {
+                isActive: params.row.visibility !== "Hidden" ? false : true,
+              })
+            }
+          >
+            {params.row.visibility === "Hidden" ? "Show" : "Hide"}
+          </Button>
+        </div>
+      ),
     },
     {
       field: "Preview",
@@ -82,6 +152,8 @@ const AllProducts = () => {
         price: "US$ " + item.discountPrice,
         Stock: item.stock,
         sold: item?.sold_out,
+        approvalStatus: item.approvalStatus || "approved",
+        visibility: item.isActive === false ? "Hidden" : "Active",
       });
     });
 

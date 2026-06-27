@@ -12,11 +12,9 @@ const SellerActivationPage = () => {
         if (activation_token) {
             const activationEmail = async () => {
                 try {
-                    const res = await axios
-                        .post(`${server}/shop/activation`, {
-                            activation_token
-                        })
-
+                    await axios.post(`${server}/shop/activation`, {
+                        activation_token
+                    })
                 } catch (err) {
                     console.log(err.response.data.message);
                     setError(true);
@@ -25,7 +23,7 @@ const SellerActivationPage = () => {
             activationEmail();
         }
 
-    }, []);
+    }, [activation_token]);
 
     return (
         <div
@@ -49,7 +47,6 @@ const SellerActivationPage = () => {
 }
 
 export default SellerActivationPage
-
 
 
 

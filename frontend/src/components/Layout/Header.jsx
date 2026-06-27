@@ -2,23 +2,23 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { categoriesData } from "../../static/data";
 import {
+  AiOutlineBell,
   AiOutlineHeart,
   AiOutlineSearch,
   AiOutlineShoppingCart,
 } from "react-icons/ai";
+import axios from "axios";
 import { IoIosArrowDown } from "react-icons/io";
 import { BiMenuAltLeft } from "react-icons/bi";
 import { CgProfile } from "react-icons/cg";
 import { RxCross1 } from "react-icons/rx";
 import DropDown from "./DropDown";
-import Navbar from "./Navbar";
 import { useSelector } from "react-redux";
-import { backend_url } from "../../server";
+import { backend_url, server } from "../../server";
 import Cart from "../cart/Cart";
 import Wishlist from "../Wishlist/Wishlist";
 
 const Header = ({ activeHeading }) => {
-  const { isSeller } = useSelector((state) => state.seller);
   const { cart } = useSelector((state) => state.cart);
   const { wishlist } = useSelector((state) => state.wishlist);
   const { isAuthenticated, user } = useSelector((state) => state.user);
@@ -30,6 +30,7 @@ const Header = ({ activeHeading }) => {
   const [openCart, setOpenCart] = useState(false);
   const [openWishlist, setOpenWishlist] = useState(false);
   const [open, setOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   const handleSearchChange = (e) => {
     const term = e.target.value;
@@ -48,6 +49,52 @@ const Header = ({ activeHeading }) => {
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setUnreadNotifications(0);
+      return;
+    }
+
+    let isMounted = true;
+
+    axios
+      .get(`${server}/notification/user`, { withCredentials: true })
+      .then(({ data }) => {
+        if (isMounted) {
+          setUnreadNotifications(data.unreadCount || 0);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setUnreadNotifications(0);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const updateUnreadNotifications = (event) => {
+      const nextCount = event.detail?.unreadCount;
+
+      setUnreadNotifications(Number.isFinite(nextCount) ? nextCount : 0);
+    };
+
+    window.addEventListener(
+      "cartify:notifications-read",
+      updateUnreadNotifications
+    );
+
+    return () => {
+      window.removeEventListener(
+        "cartify:notifications-read",
+        updateUnreadNotifications
+      );
+    };
   }, []);
 
   return (
@@ -164,6 +211,17 @@ const Header = ({ activeHeading }) => {
                 )}
               </button>
 
+              {isAuthenticated && (
+                <Link to="/notifications" className="relative">
+                  <AiOutlineBell size={20} className="text-gray-700 hover:text-brand-orange transition-colors" />
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-brand-orange text-white text-xs rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
+                      {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                    </span>
+                  )}
+                </Link>
+              )}
+
               {/* Sign In / User */}
               {isAuthenticated ? (
                 <Link to="/profile">
@@ -194,6 +252,16 @@ const Header = ({ activeHeading }) => {
             </div>
           </Link>
           <div className="flex items-center gap-3">
+            {isAuthenticated && (
+              <Link to="/notifications" className="relative">
+                <AiOutlineBell size={20} className="text-gray-700" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-brand-orange text-white text-xs rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                  </span>
+                )}
+              </Link>
+            )}
             <button onClick={() => setOpenCart(true)} className="relative">
               <AiOutlineShoppingCart size={20} className="text-gray-700" />
               {cart?.length > 0 && (
