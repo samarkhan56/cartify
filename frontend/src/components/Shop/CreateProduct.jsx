@@ -18,6 +18,10 @@ const CreateProduct = () => {
     const [description, setDescription] = useState("");
     const [category, setCategory] = useState("");
     const [tags, setTags] = useState("");
+    const [brand, setBrand] = useState("");
+    const [sku, setSku] = useState("");
+    const [specifications, setSpecifications] = useState("");
+    const [variants, setVariants] = useState("");
     const [originalPrice, setOriginalPrice] = useState("");
     const [discountPrice, setDiscountPrice] = useState("");
     const [stock, setStock] = useState("");
@@ -27,7 +31,7 @@ const CreateProduct = () => {
             toast.error(error);
         }
         if (success) {
-            toast.success("Product created successfully!");
+            toast.success("Product submitted for admin approval!");
             setIsSubmitting(false);
             // Navigate to dashboard products page
             navigate("/dashboard-products");
@@ -42,6 +46,16 @@ const CreateProduct = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        if (seller?.accountStatus === "suspended") {
+            toast.error("Your seller account is suspended. Contact admin support.");
+            return;
+        }
+
+        if (seller?.verificationStatus && seller.verificationStatus !== "approved") {
+            toast.error("Your shop must be approved before publishing products.");
+            return;
+        }
         
         // Validate required fields
         if (!name || !description || !category || !originalPrice || !stock || images.length === 0) {
@@ -60,6 +74,10 @@ const CreateProduct = () => {
         newForm.append("description", description);
         newForm.append("category", category);
         newForm.append("tags", tags);
+        newForm.append("brand", brand);
+        newForm.append("sku", sku);
+        newForm.append("specifications", specifications);
+        newForm.append("variants", variants);
         newForm.append("originalPrice", originalPrice);
         // Only send discountPrice if it has a value
         if (discountPrice) {
@@ -76,6 +94,11 @@ const CreateProduct = () => {
     return (
         <div className="w-[90%] 800px:w-[50%] bg-white rounded-xl shadow-md p-6 overflow-y-auto max-h-[85vh]">
             <h2 className="text-2xl font-bold text-[#111827] text-center mb-6">Create Product</h2>
+            {seller?.verificationStatus && seller.verificationStatus !== "approved" && (
+                <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Your shop status is {seller.verificationStatus}. Product publishing is available after admin approval.
+                </div>
+            )}
             
             <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Product Name */}
@@ -144,6 +167,59 @@ const CreateProduct = () => {
                         className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none transition-colors"
                         onChange={(e) => setTags(e.target.value)}
                         placeholder="Enter your product tags (comma separated)..."
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-[#111827] mb-1">
+                            Brand
+                        </label>
+                        <input
+                            type="text"
+                            value={brand}
+                            className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none transition-colors"
+                            onChange={(e) => setBrand(e.target.value)}
+                            placeholder="e.g. Nike, Apple, Samsung"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-[#111827] mb-1">
+                            SKU
+                        </label>
+                        <input
+                            type="text"
+                            value={sku}
+                            className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none transition-colors"
+                            onChange={(e) => setSku(e.target.value)}
+                            placeholder="Internal product code"
+                        />
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-[#111827] mb-1">
+                        Specifications
+                    </label>
+                    <textarea
+                        rows="3"
+                        value={specifications}
+                        className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none transition-colors resize-none"
+                        onChange={(e) => setSpecifications(e.target.value)}
+                        placeholder="One per line, e.g. Material: Cotton"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-[#111827] mb-1">
+                        Variants
+                    </label>
+                    <textarea
+                        rows="3"
+                        value={variants}
+                        className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none transition-colors resize-none"
+                        onChange={(e) => setVariants(e.target.value)}
+                        placeholder="One per line, e.g. Size: S, M, L"
                     />
                 </div>
 

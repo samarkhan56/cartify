@@ -1,6 +1,5 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { backend_url } from "../../server";
-import styles from "../../styles/styles";
 import CountDown from "./CountDown";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";

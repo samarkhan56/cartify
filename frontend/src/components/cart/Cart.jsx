@@ -60,14 +60,21 @@ const Cart = ({ setOpenCart }) => {
 
   return (
     <div className="fixed top-0 left-0 w-full bg-black/50 h-screen z-50 animate-fadeIn">
-      <div className="fixed top-0 right-0 h-full w-[90%] 800px:w-[400px] bg-card flex flex-col overflow-y-scroll shadow-2xl animate-slideInLeft">
+      <div className="fixed top-0 right-0 h-full w-full sm:w-[440px] bg-card flex flex-col overflow-y-scroll shadow-2xl animate-slideInLeft">
         {/* Header */}
         <div className="sticky top-0 bg-card border-b border-border-gray p-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <IoBagHandleOutline size={22} className="text-brand-orange" />
-            <h5 className="text-lg font-semibold text-text-primary">
-              Shopping Cart ({cart?.length || 0})
-            </h5>
+            <div>
+              <h5 className="text-lg font-semibold text-text-primary">
+                Shopping Cart ({cart?.length || 0})
+              </h5>
+              {cart?.length > 0 && (
+                <p className="text-xs text-text-secondary">
+                  {selectedItems.length} selected for checkout
+                </p>
+              )}
+            </div>
           </div>
           <button
             onClick={() => setOpenCart(false)}
@@ -98,17 +105,22 @@ const Cart = ({ setOpenCart }) => {
           <>
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto">
-              <label className="flex items-center gap-3 px-4 py-3 border-b border-border-gray text-sm font-medium text-text-primary cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={allItemsSelected}
-                  onChange={(event) =>
-                    dispatch(setAllCartItemsSelected(event.target.checked))
-                  }
-                  className="w-4 h-4 accent-orange-500"
-                />
-                Select all products
-              </label>
+              <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border-gray">
+                <label className="flex items-center gap-3 text-sm font-medium text-text-primary cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={allItemsSelected}
+                    onChange={(event) =>
+                      dispatch(setAllCartItemsSelected(event.target.checked))
+                    }
+                    className="w-4 h-4 accent-orange-500"
+                  />
+                  Select all products
+                </label>
+                <span className="text-xs text-text-secondary whitespace-nowrap">
+                  {selectedItems.length}/{cart.length} selected
+                </span>
+              </div>
               {cart.map((item) => (
                 <CartSingle
                   data={item}
@@ -124,7 +136,7 @@ const Cart = ({ setOpenCart }) => {
             </div>
 
             {/* Footer / Checkout Section */}
-            <div className="sticky bottom-0 bg-card border-t border-border-gray p-4">
+            <div className="sticky bottom-0 bg-card border-t border-border-gray p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               {/* Savings Banner */}
               {savings > 0 && (
                 <div className="bg-success/10 rounded-lg p-3 mb-4">

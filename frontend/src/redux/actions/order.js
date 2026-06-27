@@ -7,12 +7,17 @@ const getErrorMessage = (error) =>
 // get all orders of user
 export const getAllOrdersOfUser = (userId) => async (dispatch) => {
   try {
+    if (!userId) {
+      return;
+    }
+
     dispatch({
       type: "getAllOrdersUserRequest",
     });
 
     const { data } = await axios.get(
-      `${server}/order/get-all-orders/${userId}`
+      `${server}/order/get-all-orders/${userId}`,
+      { withCredentials: true }
     );
 
     dispatch({
@@ -30,12 +35,17 @@ export const getAllOrdersOfUser = (userId) => async (dispatch) => {
 // Get all orders of seller
 export const getAllOrdersOfShop = (shopId) => async (dispatch) => {
   try {
+    if (!shopId) {
+      return;
+    }
+
     dispatch({
       type: "getAllOrdersShopRequest",
     });
 
     const { data } = await axios.get(
-      `${server}/order/get-seller-all-orders/${shopId}`
+      `${server}/order/get-seller-all-orders/${shopId}`,
+      { withCredentials: true }
     );
 
     dispatch({
@@ -72,3 +82,34 @@ export const getAllOrdersOfAdmin = () => async (dispatch) => {
     });
   }
 };
+
+// update refund request as admin
+export const updateAdminRefundStatus =
+  (orderId, status, note = "") =>
+  async (dispatch) => {
+    try {
+      dispatch({
+        type: "adminRefundStatusRequest",
+      });
+
+      const { data } = await axios.put(
+        `${server}/order/admin-refund-status/${orderId}`,
+        { status, note },
+        { withCredentials: true }
+      );
+
+      dispatch({
+        type: "adminRefundStatusSuccess",
+        payload: data.order,
+      });
+
+      return data;
+    } catch (error) {
+      const message = getErrorMessage(error);
+      dispatch({
+        type: "adminRefundStatusFailed",
+        payload: message,
+      });
+      throw new Error(message);
+    }
+  };

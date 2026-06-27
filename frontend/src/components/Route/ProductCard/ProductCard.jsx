@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from "react-router-dom";
-import styles from "../../../styles/styles";
 import {
     AiFillHeart,
-    AiFillStar,
     AiOutlineEye,
     AiOutlineHeart,
     AiOutlineShoppingCart,
-    AiOutlineStar,
 } from "react-icons/ai";
 import { backend_url } from "../../../server";
 import ProductDetailsCard from "../ProductDetailsCard/ProductDetailsCard.jsx";
@@ -30,7 +27,7 @@ const ProductCard = ({ data, isEvent }) => {
         } else {
             setClick(false);
         }
-    }, [wishlist]);
+    }, [data._id, wishlist]);
 
     const removeFromWishlistHandler = (data) => {
         setClick(!click);
@@ -62,6 +59,8 @@ const ProductCard = ({ data, isEvent }) => {
     const discountPercentage = data.originalPrice > data.discountPrice 
         ? Math.round(((data.originalPrice - data.discountPrice) / data.originalPrice) * 100)
         : 0;
+    const sellerName = data.brand || data.shop?.name || "Cartify seller";
+    const isLowStock = data.stock > 0 && data.stock <= 5;
 
     return (
         <>
@@ -77,6 +76,11 @@ const ProductCard = ({ data, isEvent }) => {
                 {data.stock === 0 && (
                     <div className='absolute top-2 left-2 z-10 bg-red-500 text-light-text text-xs font-bold px-2 py-1 rounded-full'>
                         Sold Out
+                    </div>
+                )}
+                {isLowStock && (
+                    <div className='absolute top-2 right-2 z-10 bg-amber-500 text-light-text text-xs font-bold px-2 py-1 rounded-full'>
+                        Only {data.stock} left
                     </div>
                 )}
 
@@ -98,7 +102,7 @@ const ProductCard = ({ data, isEvent }) => {
                     {/* Shop Name */}
                     <Link to={`${isEvent === true ? `/product/${data._id}?isEvent=true` : `/product/${data._id}`}`}>
                         <h5 className='text-xs text-brand-orange font-medium mb-1 hover:underline'>
-                            {data.shop.name}
+                            {sellerName}
                         </h5>
                     </Link>
                     
@@ -112,7 +116,7 @@ const ProductCard = ({ data, isEvent }) => {
                     {/* Rating */}
                     <div className='flex items-center gap-1 mb-2'>
                         <Ratings rating={data?.ratings} />
-                        <span className='text-xs text-text-secondary'>({data?.ratings?.length || 0})</span>
+                        <span className='text-xs text-text-secondary'>({data?.reviews?.length || 0})</span>
                     </div>
 
                     {/* Price Section */}

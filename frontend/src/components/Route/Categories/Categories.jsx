@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useNavigate } from "react-router-dom";
-import { brandingData, categoriesData } from "../../../static/data";
+import { categoriesData } from "../../../static/data";
 import {
     FaTruck,
     FaGift,
@@ -24,17 +24,14 @@ import {
     FaBook,
     FaFutbol,
     FaCar,
-    FaTree,
-    FaMusic,
     FaGamepad
 } from "react-icons/fa";
-import { GiLipstick, GiNecklace, GiSunglasses, GiDiamondRing } from "react-icons/gi";
-import { MdOutlineWatch, MdKitchen, MdToys } from "react-icons/md";
+import { GiLipstick, GiSunglasses } from "react-icons/gi";
+import { MdToys } from "react-icons/md";
 import { RiPlantFill } from "react-icons/ri";
 
 const Categories = () => {
     const navigate = useNavigate();
-    const [activeCategory, setActiveCategory] = useState(null);
 
     // ========== UNIQUE ICONS FOR EACH CATEGORY ==========
     const getCategoryIcon = (title) => {
@@ -235,7 +232,6 @@ const Categories = () => {
                     {categoriesData &&
                         categoriesData.map((category, index) => {
                             const handleSubmit = () => {
-                                setActiveCategory(category.id);
                                 setTimeout(() => {
                                     navigate(`/products?category=${category.title}`);
                                 }, 300);

@@ -7,38 +7,39 @@ const initialState = {
   error: null,
 };
 
-export const sellerReducer = createReducer(initialState, {
-  LoadSellerRequest: (state) => {
+export const sellerReducer = createReducer(initialState, (builder) => {
+  builder
+  .addCase("LoadSellerRequest", (state) => {
     state.isLoading = true;
-  },
-  LoadSellerSuccess: (state, action) => {
+  })
+  .addCase("LoadSellerSuccess", (state, action) => {
     state.isSeller = true;
     state.isLoading = false;
     state.seller = action.payload;
     state.error = null;
-  },
-  LoadSellerFail: (state, action) => {
+  })
+  .addCase("LoadSellerFail", (state, action) => {
     state.isLoading = false;
     state.error = action.payload;
     state.isSeller = false;
     state.seller = null;
-  },
+  })
   // get all sellers ---admin
-  getAllSellersRequest: (state) => {
+  .addCase("getAllSellersRequest", (state) => {
     state.isLoading = true;
-  },
-  getAllSellersSuccess: (state, action) => {
+  })
+  .addCase("getAllSellersSuccess", (state, action) => {
     state.isLoading = false;
     state.sellers = action.payload;
-  },
-  getAllSellerFailed: (state, action) => {
+  })
+  .addCase("getAllSellerFailed", (state, action) => {
     state.isLoading = false;
     state.error = action.payload;
-  },
+  })
 
-  clearErrors: (state) => {
+  .addCase("clearErrors", (state) => {
     state.error = null;
-  },
+  });
 });
 
 // reducer -> logic (state change)

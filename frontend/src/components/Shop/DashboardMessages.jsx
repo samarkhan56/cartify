@@ -2,7 +2,7 @@ import axios from "axios";
 import React, { useRef, useState } from "react";
 import { useEffect } from "react";
 import { backend_url, server } from "../../server";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { AiOutlineArrowRight, AiOutlineSend } from "react-icons/ai";
 import styles from "../../styles/styles";
@@ -21,7 +21,6 @@ const DashboardMessages = () => {
   const [userData, setUserData] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [onlineUsers, setOnlineUsers] = useState([]);
-  const [images, setImages] = useState();
   const [activeStatus, setActiveStatus] = useState(false);
   const [open, setOpen] = useState(false);
   const scrollRef = useRef(null);
@@ -152,7 +151,6 @@ const DashboardMessages = () => {
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
-    setImages(file);
     imageSendingHandler(file);
   };
 
@@ -182,7 +180,6 @@ const DashboardMessages = () => {
           },
         })
         .then((res) => {
-          setImages();
           setMessages([...messages, res.data.message]);
           updateLastMessageForImage();
         });
@@ -269,7 +266,7 @@ const MessageList = ({
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const userId = data.members.find((user) => user != me);
+    const userId = data.members.find((user) => user !== me);
 
     const getUser = async () => {
       try {
@@ -377,6 +374,7 @@ const SellerInbox = ({
                   <img
                     src={`${backend_url}${item.images}`}
                     className="w-[300px] h-[300px] object-cover rounded-[10px] mr-2"
+                    alt="Message attachment"
                   />
                 )}
                 {item.text !== "" && (
@@ -401,7 +399,6 @@ const SellerInbox = ({
 
       {/* send message input */}
       <form
-        aria-required={true}
         className="p-3 relative w-full flex justify-between items-center"
         onSubmit={sendMessageHandler}
       >

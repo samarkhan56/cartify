@@ -16,6 +16,10 @@ const productSchema = new mongoose.Schema({
   tags: {
     type: String,
   },
+  brand: {
+    type: String,
+    trim: true,
+  },
   originalPrice: {
     type: Number,
     required: [true, "Please enter your original product price!"],
@@ -27,6 +31,51 @@ const productSchema = new mongoose.Schema({
   stock: {
     type: Number,
     required: [true, "Please enter your product stock!"],
+  },
+  sku: {
+    type: String,
+    trim: true,
+  },
+  specifications: [
+    {
+      name: {
+        type: String,
+        trim: true,
+      },
+      value: {
+        type: String,
+        trim: true,
+      },
+    },
+  ],
+  variants: [
+    {
+      name: {
+        type: String,
+        trim: true,
+      },
+      options: [
+        {
+          type: String,
+          trim: true,
+        },
+      ],
+    },
+  ],
+  approvalStatus: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  rejectionReason: {
+    type: String,
+  },
+  approvedAt: {
+    type: Date,
   },
   images: [
     {
@@ -47,6 +96,10 @@ const productSchema = new mongoose.Schema({
       },
       productId: {
         type: String,
+      },
+      verifiedPurchase: {
+        type: Boolean,
+        default: false,
       },
       createdAt: {
         type: Date,

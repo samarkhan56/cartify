@@ -46,8 +46,6 @@ const PaymentPage = () => {
   return (
     <div className="w-full min-h-screen bg-[#f6f9fc]">
       <Header />
-      <br />
-      <br />
       <CheckoutSteps active={2} />
       {isLoading ? (
         <div className="flex justify-center items-center h-screen">
@@ -59,8 +57,6 @@ const PaymentPage = () => {
       ) : (
         paymentContent
       )}
-      <br />
-      <br />
       <Footer />
     </div>
   );

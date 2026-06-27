@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
-import styles from "../styles/styles";
 import { BsFillBagFill } from "react-icons/bs";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { backend_url, server } from "../server";
@@ -9,6 +8,12 @@ import { RxCross1 } from "react-icons/rx";
 import { getAllOrdersOfUser } from "../redux/actions/order";
 import { useDispatch, useSelector } from "react-redux";
 import { AiFillStar, AiOutlineStar } from "react-icons/ai";
+import OrderTimeline from "./Order/OrderTimeline";
+
+const getAssetUrl = (path) =>
+  path?.startsWith("http") ? path : `${backend_url}${path || ""}`;
+
+const money = (value) => Number(value || 0).toFixed(2);
 
 const UserOrderDetails = () => {
   const { orders } = useSelector((state) => state.order);
@@ -18,24 +23,20 @@ const UserOrderDetails = () => {
   const [comment, setComment] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
   const [rating, setRating] = useState(1);
-
   const { id } = useParams();
 
   useEffect(() => {
-    dispatch(getAllOrdersOfUser(user._id));
-  }, [dispatch, user._id]);
+    if (user?._id) {
+      dispatch(getAllOrdersOfUser(user._id));
+    }
+  }, [dispatch, user?._id]);
 
   const data = orders && orders.find((item) => item._id === id);
 
-  const reviewHandler = async (type) => {
+  const reviewHandler = async () => {
     try {
-      const endpoint =
-        type === "product"
-          ? "/product/create-new-review"
-          : "/event/create-new-review-event";
-
       const res = await axios.put(
-        `${server}${endpoint}`,
+        `${server}/product/create-new-review`,
         {
           user,
           rating,
@@ -49,222 +50,233 @@ const UserOrderDetails = () => {
       toast.success(res.data.message);
       dispatch(getAllOrdersOfUser(user._id));
       setComment("");
-      setRating(null);
+      setRating(1);
       setOpen(false);
     } catch (error) {
-      console.error(error); // Log the error to the console for debugging
-      toast.error("An error occurred. Please try again."); // Display a generic error message
+      toast.error(error.response?.data?.message || "Review could not be submitted.");
     }
   };
 
-  const combinedHandler = async () => {
-    if (rating > 1) {
-      await reviewHandler("product");
-      await reviewHandler("event");
-    }
-  };
-
-  // Refund
   const refundHandler = async () => {
     await axios
-      .put(`${server}/order/order-refund/${id}`, {
-        status: "Processing refund",
-      })
+      .put(
+        `${server}/order/order-refund/${id}`,
+        { status: "Processing refund" },
+        { withCredentials: true }
+      )
       .then((res) => {
         toast.success(res.data.message);
         dispatch(getAllOrdersOfUser(user._id));
       })
       .catch((error) => {
-        toast.error(error.response.data.message);
+        toast.error(error.response?.data?.message || "Refund request failed.");
       });
   };
 
-  return (
-    <div className={`py-4 min-h-screen ${styles.section}`}>
-      <div className="w=full flex items-center justify-between">
-        <div className="flex items-center">
-          <BsFillBagFill size={30} color="crimson" />
-          <h1 className="pl-2 text-[25px]">Order Details</h1>
+  if (!data) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="text-center">
+          <h1 className="text-xl font-semibold text-gray-800">Order not found</h1>
+          <p className="text-gray-500 mt-2">The order may still be loading or is unavailable.</p>
+          <Link to="/profile" className="inline-block mt-4 text-orange-600">
+            Back to profile
+          </Link>
         </div>
       </div>
+    );
+  }
 
-      <div className="w-full flex items-center justify-between pt-6">
-        <h5 className="text-[#00000084]">
-          order ID: <span>#{data?._id?.slice(0, 8)}</span>
-        </h5>
-        <h5 className="text-[#000000084]">
-          Placed On: <span>{data?.createdAt?.slice(0, 10)}</span>
-        </h5>
-      </div>
+  const canRequestRefund = data.status === "Delivered";
+  const isRefunding = String(data.status || "").toLowerCase().includes("refund");
+  const itemCount = data.cart?.reduce((total, item) => total + Number(item.qty || 0), 0) || 0;
 
-      {/* Order Items */}
-      <br />
-      <br />
-      {data &&
-        data?.cart.map((item, index) => {
-          return (
-            <div className="w-full flex items-start mb-5">
-              <img
-                src={`${backend_url}/${item.images[0]}`}
-                alt="Product item order img"
-                className="w-[80x] h-[80px]"
-              />
-              <div className="w-full">
-                <h5 className="pl-3 text-[20px]">{item.name}</h5>
-                <h5 className="pl-3 text-[20px] text-[#00000091]">
-                  US${item.discountPrice} x {item.qty}
-                </h5>
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <BsFillBagFill size={30} className="text-orange-600" />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Order Details</h1>
+              <p className="text-sm text-gray-500">
+                #{data._id?.slice(-8).toUpperCase()} placed on {data.createdAt?.slice(0, 10)}
+              </p>
+            </div>
+          </div>
+          <Link to={`/user/track/order/${data._id}`} className="text-sm text-orange-600 hover:text-orange-700">
+            Track order
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <OrderTimeline order={data} />
+
+            <div className="bg-white border border-gray-100 rounded-lg p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Items</h2>
+                <span className="text-sm text-gray-500">{itemCount} item(s)</span>
               </div>
-              {!item.isReviewed && data?.status === "Delivered" ? (
-                <div
-                  className={`${styles.button} text-[#fff]`}
-                  onClick={() => setOpen(true) || setSelectedItem(item)}
-                >
-                  write a review
+
+              <div className="space-y-4">
+                {data.cart?.map((item, index) => (
+                  <div key={item._id || index} className="flex flex-col sm:flex-row sm:items-center gap-4 border-b border-gray-100 pb-4 last:border-b-0 last:pb-0">
+                    <img
+                      src={getAssetUrl(item.images?.[0])}
+                      alt={item.name}
+                      className="w-20 h-20 rounded-lg object-cover bg-gray-100"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">{item.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        ${money(item.discountPrice)} x {item.qty}
+                      </p>
+                    </div>
+                    {!item.isReviewed && data.status === "Delivered" && (
+                      <button
+                        className="rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
+                        onClick={() => {
+                          setSelectedItem(item);
+                          setOpen(true);
+                        }}
+                      >
+                        Write review
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white border border-gray-100 rounded-lg p-5 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900">Payment</h2>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Method</span>
+                  <span className="font-medium text-gray-800">{data.paymentInfo?.type || "N/A"}</span>
                 </div>
-              ) : null}
-            </div>
-          );
-        })}
-
-      {/* Review Popup */}
-      {open && (
-        <div className="w-full  top-0 left-0 h-screen bg-[#0005] z-50 flex items-center justify-center">
-          <div className="w-[50%] h-min bg-[#fff] shadow rounded-md p-3 ">
-            <div className="w-full flex justify-end p-3">
-              <RxCross1
-                size={30}
-                onClick={() => setOpen(false)}
-                className="cursor-pointer"
-              />
-            </div>
-            <h2 className="text-[30px] font-[500] font-Poppins text-center">
-              Give a Review
-            </h2>
-            <br />
-            <div className="w-full flex">
-              <img
-                src={`${backend_url}/${selectedItem?.images[0]}`}
-                alt=""
-                className="w-[80px] h-[80px]"
-              />
-              <div>
-                <div className="pl-3 text-[20px]">{selectedItem?.name}</div>
-                <h4 className="pl-3 text-[20px]">
-                  US${selectedItem?.discountPrice} x {selectedItem?.qty}
-                </h4>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Status</span>
+                  <span className="font-medium text-gray-800">{data.paymentInfo?.status || "Pending"}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Subtotal</span>
+                  <span className="font-medium text-gray-800">${money(data.subTotalPrice)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Shipping</span>
+                  <span className="font-medium text-gray-800">${money(data.shippingPrice)}</span>
+                </div>
+                {Number(data.discountPrice || 0) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Discount</span>
+                    <span className="font-medium text-red-500">-${money(data.discountPrice)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-gray-100 pt-3">
+                  <span className="text-gray-500">Total</span>
+                  <span className="font-semibold text-orange-600">${money(data.totalPrice)}</span>
+                </div>
               </div>
-            </div>
 
-            <br />
-            <br />
-
-            {/* Rating */}
-            <h5 className="pl-3 text-[20px] font-[500]">
-              Give a Rating <span className="text-red-500">*</span>
-            </h5>
-            <div className="flex w-fit ml-2 pt-1">
-              {[1, 2, 3, 4, 5].map((i) =>
-                rating >= i ? (
-                  <AiFillStar
-                    key={i}
-                    className="mr-1 cursor-pointer"
-                    color="rgb(246,186,0)"
-                    size={25}
-                    onClick={() => setRating(i)}
-                  />
-                ) : (
-                  <AiOutlineStar
-                    key={i}
-                    className="mr-1 cursor-pointer"
-                    color="rgb(246,186,0)"
-                    size={25}
-                    onClick={() => setRating(i)}
-                  />
-                )
+              {canRequestRefund && !isRefunding && (
+                <button
+                  className="mt-5 w-full rounded-md bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-100"
+                  onClick={refundHandler}
+                >
+                  Request refund
+                </button>
               )}
             </div>
-            <br />
-            {/* Comment */}
-            <div className="w-full ml-3">
-              <label className="block text-[20px] font-[500]">
-                Write a Comment
-                <span className="ml-1 font-[400] text-[16px] text-[#00000052]">
-                  (Optional)
-                </span>
-              </label>
-              <textarea
-                name="comment"
-                id=""
-                cols="20"
-                rows="5"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="How was your product? write your expresion about it!"
-                className="mt-2 w-[95%] border p-2 outline-none"
-              ></textarea>
-            </div>
-            <div
-              className={`${styles.button} text-white text-[20px] ml-3`}
-              onClick={rating > 1 ? combinedHandler : null}
-            >
-              Submit
+
+            <div className="bg-white border border-gray-100 rounded-lg p-5 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900">Shipping Address</h2>
+              <p className="text-sm text-gray-600 mt-3">
+                {data.shippingAddress?.fullName}
+                <br />
+                {data.shippingAddress?.address1} {data.shippingAddress?.address2}
+                <br />
+                {data.shippingAddress?.city}, {data.shippingAddress?.country} {data.shippingAddress?.zipCode}
+                <br />
+                {data.shippingAddress?.phoneNumber || data.user?.phoneNumber}
+              </p>
             </div>
           </div>
         </div>
-      )}
-
-      <div className="border-t w-full text-right">
-        <h5>
-          Total Price: <strong>US${data?.totalPrice}</strong>
-        </h5>
       </div>
-      <br />
-      <br />
 
-      {/* Shipping Address */}
-
-      <div className="w-full 800px:flex items-center">
-        <div className="w-full 800px:w-[60%]">
-          <h4 className="pt-3 text-[20px] font-[600]">Shipping Address:</h4>
-
-          <h4 className="pt-3 text-[20px]">
-            {data?.shippingAddress.address1 +
-              " " +
-              data?.shippingAddress.address2}
-          </h4>
-          <h4 className="text-[20px]">{data?.shippingAddress.country}</h4>
-          <h4 className=" text-[20px]">{data?.shippingAddress.city}</h4>
-
-          <h4 className=" text-[20px]">{data?.user?.phoneNumber}</h4>
-        </div>
-
-        <div className="w-full 800px:w-[40%]">
-          <h4 className="pt-3 text-[20px]">Payment Info:</h4>
-          <h4>
-            Status:{" "}
-            {/* checks if the `status` property exists
-                     in the `paymentInfo` object within the `data` object. */}
-            {data?.paymentInfo?.status ? data?.paymentInfo?.status : "Not Paid"}
-          </h4>
-          <br />
-          {data?.status === "Delivered" && (
-            <div
-              className={`${styles.button} text-white`}
-              onClick={refundHandler}
-            >
-              Give a Refund
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="w-full max-w-lg rounded-lg bg-white p-5 shadow-xl">
+            <div className="flex justify-end">
+              <RxCross1
+                size={24}
+                onClick={() => setOpen(false)}
+                className="cursor-pointer text-gray-500"
+              />
             </div>
-          )}
-        </div>
-      </div>
-      <br />
+            <h2 className="text-center text-2xl font-semibold text-gray-900">Give a Review</h2>
 
-      <Link to="/">
-        <div className={`${styles.button} text-white`}>Send Message</div>
-      </Link>
-      <br />
-      <br />
+            <div className="mt-5 flex gap-4">
+              <img
+                src={getAssetUrl(selectedItem?.images?.[0])}
+                alt={selectedItem?.name}
+                className="h-20 w-20 rounded-lg object-cover"
+              />
+              <div>
+                <p className="font-medium text-gray-900">{selectedItem?.name}</p>
+                <p className="text-sm text-gray-500">
+                  ${money(selectedItem?.discountPrice)} x {selectedItem?.qty}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <h5 className="font-medium text-gray-900">Rating</h5>
+              <div className="mt-2 flex w-fit">
+                {[1, 2, 3, 4, 5].map((i) =>
+                  rating >= i ? (
+                    <AiFillStar
+                      key={i}
+                      className="mr-1 cursor-pointer"
+                      color="rgb(246,186,0)"
+                      size={25}
+                      onClick={() => setRating(i)}
+                    />
+                  ) : (
+                    <AiOutlineStar
+                      key={i}
+                      className="mr-1 cursor-pointer"
+                      color="rgb(246,186,0)"
+                      size={25}
+                      onClick={() => setRating(i)}
+                    />
+                  )
+                )}
+              </div>
+            </div>
+
+            <label className="mt-5 block font-medium text-gray-900">
+              Comment <span className="font-normal text-gray-400">(optional)</span>
+            </label>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="How was your product?"
+              className="mt-2 h-28 w-full rounded-md border border-gray-200 p-3 outline-none focus:border-orange-500"
+            />
+            <button
+              className="mt-4 w-full rounded-md bg-orange-600 px-4 py-2 font-semibold text-white hover:bg-orange-700"
+              onClick={reviewHandler}
+            >
+              Submit review
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

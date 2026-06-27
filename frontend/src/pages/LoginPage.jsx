@@ -36,7 +36,7 @@ const LoginPage = () => {
         setIsLoading(true);
         
         try {
-            const { data } = await axios.post(`${server}/user/login-user`, {
+            await axios.post(`${server}/user/login-user`, {
                 email: customerEmail,
                 password: customerPassword,
             }, { withCredentials: true });
@@ -58,7 +58,7 @@ const LoginPage = () => {
         setIsLoading(true);
         
         try {
-            const { data } = await axios.post(`${server}/shop/login-shop`, {
+            await axios.post(`${server}/shop/login-shop`, {
                 email: sellerEmail,
                 password: sellerPassword,
             }, { withCredentials: true });

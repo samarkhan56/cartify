@@ -33,6 +33,29 @@ const shopSchema = new mongoose.Schema({
     type: String,
     default: "Seller",
   },
+  verificationStatus: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+  accountStatus: {
+    type: String,
+    enum: ["active", "suspended"],
+    default: "active",
+  },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  rejectionReason: {
+    type: String,
+  },
+  approvedAt: {
+    type: Date,
+  },
+  suspendedAt: {
+    type: Date,
+  },
   avatar: {
     type: String,
     default: "",  // Empty string means use initials
