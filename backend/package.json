@@ -6,6 +6,7 @@
     "node": "18.16.0"
   },
   "scripts": {
+    "test": "node --test tests/priceRecommendation.test.js",
     "dev": "nodemon server.js",
     "start": "node server.js",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false"

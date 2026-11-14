@@ -8,6 +8,8 @@ const Shop = require("../model/shop");
 const { upload } = require("../multer");
 const ErrorHandler = require("../utils/ErrorHandler");
 const fs = require("fs");
+const { recommendPrice } = require("../utils/priceRecommendation");
+const { validateProductTaxonomy } = require("../utils/productTaxonomy");
 
 const PRODUCT_APPROVAL_STATUSES = ["pending", "approved", "rejected"];
 const visibleProductQuery = {
@@ -114,6 +116,25 @@ const buildProductSort = (sort) => {
   return sortMap[sort] || sortMap.latest;
 };
 
+// Advisory only: authentication uses the seller cookie, never a submitted shop ID.
+router.post(
+  "/recommend-price",
+  isSeller,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const recommendation = await recommendPrice(req.body);
+      res.status(200).json({ success: true, recommendation });
+    } catch (error) {
+      if (typeof error.code === "string" && error.code.startsWith("AI_PRICE_")) {
+        return res.status(error.statusCode).json({
+          success: false, code: error.code, message: error.message,
+        });
+      }
+      return next(error);
+    }
+  })
+);
+
 // create product
 router.post(
   "/create-product",
@@ -144,6 +165,11 @@ router.post(
       const files = req.files || [];
       const imageUrls = files.map((file) => `${file.filename}`);
       const productData = req.body;
+      const taxonomy = validateProductTaxonomy(productData);
+      // Preserve omission for legacy clients; only normalize fields supplied by them.
+      Object.keys(taxonomy).forEach((field) => {
+        if (productData[field] !== undefined) productData[field] = taxonomy[field];
+      });
 
       if (!productData.discountPrice || productData.discountPrice === "") {
         productData.discountPrice = productData.originalPrice;

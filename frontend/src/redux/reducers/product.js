@@ -2,10 +2,39 @@ import { createReducer } from "@reduxjs/toolkit";
 
 const initialState = {
   isLoading: true,
+  priceRecommendationLoading: false,
+  priceRecommendation: null,
+  priceRecommendationError: null,
+  priceRecommendationRequestId: null,
+  priceRecommendationInputKey: null,
 };
 
 export const productReducer = createReducer(initialState, (builder) => {
   builder
+  .addCase("priceRecommendationRequest", (state, action) => {
+    state.priceRecommendationLoading = true;
+    state.priceRecommendation = null;
+    state.priceRecommendationError = null;
+    state.priceRecommendationRequestId = action.meta.requestId;
+    state.priceRecommendationInputKey = action.meta.inputKey;
+  })
+  .addCase("priceRecommendationSuccess", (state, action) => {
+    if (state.priceRecommendationRequestId !== action.meta.requestId) return;
+    state.priceRecommendationLoading = false;
+    state.priceRecommendation = action.payload;
+  })
+  .addCase("priceRecommendationFail", (state, action) => {
+    if (state.priceRecommendationRequestId !== action.meta.requestId) return;
+    state.priceRecommendationLoading = false;
+    state.priceRecommendationError = action.payload;
+  })
+  .addCase("priceRecommendationReset", (state) => {
+    state.priceRecommendationLoading = false;
+    state.priceRecommendation = null;
+    state.priceRecommendationError = null;
+    state.priceRecommendationRequestId = null;
+    state.priceRecommendationInputKey = null;
+  })
   .addCase("productCreateRequest", (state) => {
     state.isLoading = true;
   })

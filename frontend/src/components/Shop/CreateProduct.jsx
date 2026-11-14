@@ -1,14 +1,32 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { AiOutlinePlusCircle } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { createProduct } from "../../redux/actions/product";
-import { categoriesData } from "../../static/data";
+import { createProduct, recommendProductPrice, resetPriceRecommendation } from "../../redux/actions/product";
+import { categoriesData, productTaxonomy, productConditions } from "../../static/data";
 import { toast } from "react-toastify";
+
+const laptopConditionMessage = "AI price recommendations for laptops are currently available only for New or Refurbished items.";
+const suppressionMessage = (reason) => {
+    switch (reason) {
+        case "excessive_price_deviation":
+            return "The AI estimate differs too much from your entered price, so no recommendation is being applied.";
+        case "original_price_out_of_supported_range":
+        case "original_price_outside_supported_range":
+        case "seller_price_outside_supported_range":
+            return "AI pricing is not available for this price range.";
+        case "prediction_out_of_supported_range":
+        case "prediction_outside_supported_range":
+            return "The AI estimate falls outside the supported pricing range.";
+        default:
+            return "AI could not safely provide a recommendation for this product.";
+    }
+};
 
 const CreateProduct = () => {
     const { seller } = useSelector((state) => state.seller);
-    const { success, error } = useSelector((state) => state.products);
+    const { success, error, priceRecommendationLoading, priceRecommendation,
+        priceRecommendationError, priceRecommendationInputKey } = useSelector((state) => state.products);
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +35,8 @@ const CreateProduct = () => {
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [category, setCategory] = useState("");
+    const [subcategory, setSubcategory] = useState("");
+    const [condition, setCondition] = useState("");
     const [tags, setTags] = useState("");
     const [brand, setBrand] = useState("");
     const [sku, setSku] = useState("");
@@ -24,7 +44,36 @@ const CreateProduct = () => {
     const [variants, setVariants] = useState("");
     const [originalPrice, setOriginalPrice] = useState("");
     const [discountPrice, setDiscountPrice] = useState("");
+    const aiAppliedDiscount = useRef(null);
     const [stock, setStock] = useState("");
+    const [gender, setGender] = useState("");
+    const [runningType, setRunningType] = useState("");
+    const taxonomyOptions = Object.prototype.hasOwnProperty.call(productTaxonomy, category)
+        ? productTaxonomy[category] : [];
+    const selectedType = taxonomyOptions.find((entry) => entry.subcategory === subcategory);
+    const productType = selectedType?.productType || "";
+    const isRunningShoes = productType === "running_shoes";
+    const requiresOriginalPrice = productType === "cookware" || isRunningShoes;
+    const requiresCondition = productType === "smartphone" || productType === "laptop";
+    const unsupportedLaptopCondition = productType === "laptop" && condition === "used";
+    const inputKey = JSON.stringify([name, brand, category, subcategory, productType, condition, specifications, description,
+        requiresOriginalPrice ? originalPrice : null, isRunningShoes ? gender : null, isRunningShoes ? runningType : null]);
+    const currentRecommendation = priceRecommendationInputKey === inputKey ? priceRecommendation : null;
+    const currentRecommendationError = priceRecommendationInputKey === inputKey ? priceRecommendationError : null;
+    const canApplyRecommendation = currentRecommendation?.recommendationAllowed !== false &&
+        typeof currentRecommendation?.price === "number" && Number.isFinite(currentRecommendation.price) &&
+        currentRecommendation.price >= 0;
+
+    // Invalidating the request ID also discards late responses for edited inputs.
+    useEffect(() => {
+        const applied = aiAppliedDiscount.current;
+        if (applied && applied.inputKey !== inputKey) {
+            aiAppliedDiscount.current = null;
+            setDiscountPrice((price) => price === applied.value ? "" : price);
+        }
+        dispatch(resetPriceRecommendation());
+        return () => { dispatch(resetPriceRecommendation()); };
+    }, [dispatch, inputKey]);
 
     useEffect(() => {
         if (error) {
@@ -42,6 +91,31 @@ const CreateProduct = () => {
         e.preventDefault();
         let files = Array.from(e.target.files);
         setImages((prevImages) => [...prevImages, ...files]);
+    };
+
+    const handleRecommendPrice = () => {
+        if (selectedType?.aiPriceSupported !== true || priceRecommendationLoading || unsupportedLaptopCondition) return;
+        if (!name.trim() || !brand.trim() || (requiresCondition && !condition)) {
+            toast.error(requiresCondition
+                ? "Enter a product name, brand, and condition to request an AI price recommendation."
+                : "Enter a product name and brand to request an AI price recommendation.");
+            return;
+        }
+        if (requiresOriginalPrice && (!Number.isFinite(Number(originalPrice)) || Number(originalPrice) <= 0 ||
+            Number(originalPrice) > Number.MAX_SAFE_INTEGER / 100)) {
+            toast.error("Enter a valid original price greater than zero to request an AI price recommendation.");
+            return;
+        }
+        if (isRunningShoes && (!gender || !runningType)) {
+            toast.error("Select gender and running type to request an AI price recommendation.");
+            return;
+        }
+        dispatch(recommendProductPrice({
+            name, brand, category, subcategory, productType, description, specifications,
+            ...(requiresCondition ? { condition } : {}),
+            ...(requiresOriginalPrice ? { originalPrice: Number(originalPrice) } : {}),
+            ...(isRunningShoes ? { gender, running_type: runningType } : {}),
+        }, inputKey));
     };
 
     const handleSubmit = (e) => {
@@ -73,6 +147,11 @@ const CreateProduct = () => {
         newForm.append("name", name);
         newForm.append("description", description);
         newForm.append("category", category);
+        if (subcategory && productType) {
+            newForm.append("subcategory", subcategory);
+            newForm.append("productType", productType);
+        }
+        if (condition) newForm.append("condition", condition);
         newForm.append("tags", tags);
         newForm.append("brand", brand);
         newForm.append("sku", sku);
@@ -142,7 +221,10 @@ const CreateProduct = () => {
                     <select
                         className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none transition-colors"
                         value={category}
-                        onChange={(e) => setCategory(e.target.value)}
+                        onChange={(e) => {
+                            setCategory(e.target.value);
+                            setSubcategory("");
+                        }}
                         required
                     >
                         <option value="">Select a category</option>
@@ -152,6 +234,30 @@ const CreateProduct = () => {
                                     {i.title}
                                 </option>
                             ))}
+                    </select>
+                </div>
+
+                {taxonomyOptions.length > 0 && (
+                    <div>
+                        <label htmlFor="product-subcategory" className="block text-sm font-medium text-[#111827] mb-1">Subcategory</label>
+                        <select id="product-subcategory" value={subcategory}
+                            onChange={(e) => setSubcategory(e.target.value)}
+                            className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none">
+                            <option value="">Select a subcategory (optional)</option>
+                            {taxonomyOptions.map((entry) => (
+                                <option key={entry.subcategory} value={entry.subcategory}>{entry.subcategory}</option>
+                            ))}
+                        </select>
+                        {selectedType && <p className="mt-2 text-sm text-[#6B7280]">Product Type: {selectedType.label}</p>}
+                    </div>
+                )}
+
+                <div>
+                    <label htmlFor="product-condition" className="block text-sm font-medium text-[#111827] mb-1">Condition</label>
+                    <select id="product-condition" value={condition} onChange={(e) => setCondition(e.target.value)}
+                        className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none">
+                        <option value="">{requiresCondition ? "Select a condition (required for AI pricing)" : "Select a condition (optional)"}</option>
+                        {productConditions.map((entry) => <option key={entry.value} value={entry.value}>{entry.label}</option>)}
                     </select>
                 </div>
 
@@ -223,6 +329,58 @@ const CreateProduct = () => {
                     />
                 </div>
 
+                {selectedType?.aiPriceSupported === true && (
+                    <div className="rounded-lg border border-[#E5E7EB] bg-gray-50 p-4" aria-live="polite">
+                        <>
+                            {isRunningShoes && (
+                                <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="ai-running-gender" className="block text-sm font-medium text-[#111827] mb-1">Gender</label>
+                                        <select id="ai-running-gender" value={gender} onChange={(e) => setGender(e.target.value)}
+                                            className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg">
+                                            <option value="">Select gender for AI pricing</option>
+                                            {["Men", "Women"].map((value) => <option key={value} value={value}>{value}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="ai-running-type" className="block text-sm font-medium text-[#111827] mb-1">Running Type</label>
+                                        <select id="ai-running-type" value={runningType} onChange={(e) => setRunningType(e.target.value)}
+                                            className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg">
+                                            <option value="">Select running type for AI pricing</option>
+                                            {["Running", "Road Running", "Trail Running"].map((value) => <option key={value} value={value}>{value}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+                            {requiresOriginalPrice && <p className="mb-3 text-sm text-[#6B7280]">Enter the Original Price below to check AI pricing. It is used as a reference for the recommendation.</p>}
+                            {unsupportedLaptopCondition && <p className="mb-3 text-sm text-[#6B7280]">{laptopConditionMessage}</p>}
+                            <button type="button" onClick={handleRecommendPrice} disabled={priceRecommendationLoading || unsupportedLaptopCondition}
+                                className="px-4 py-2 bg-[#F97316] hover:bg-[#EA580C] text-white font-semibold rounded-lg disabled:opacity-50">
+                                {priceRecommendationLoading ? "Getting AI recommendation..." : "Get AI Price Recommendation"}
+                            </button>
+                            {currentRecommendationError && <p role="alert" className="mt-3 text-sm text-red-600">{currentRecommendationError}</p>}
+                            {currentRecommendation?.recommendationAllowed === false && (
+                                <p role="status" className="mt-3 text-sm text-[#6B7280]">{suppressionMessage(currentRecommendation.reason)} You can still enter your price manually and create the product.</p>
+                            )}
+                            {canApplyRecommendation && (
+                                <div className="mt-3">
+                                    <p className="font-medium text-[#111827]">AI Recommended Price</p>
+                                    <p className="text-xl font-semibold text-[#111827]">${currentRecommendation.price.toFixed(2)} {currentRecommendation.currency}</p>
+                                    <p className="mt-1 text-sm text-[#6B7280]">Based on the product information provided.</p>
+                                    <button type="button" onClick={() => {
+                                        const value = currentRecommendation.price.toFixed(2);
+                                        aiAppliedDiscount.current = { value, inputKey };
+                                        setDiscountPrice(value);
+                                    }}
+                                        className="mt-3 px-4 py-2 border border-[#F97316] text-[#F97316] rounded-lg hover:bg-orange-50">
+                                        Use Recommended Price
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    </div>
+                )}
+
                 {/* Original Price - REQUIRED */}
                 <div>
                     <label className="block text-sm font-medium text-[#111827] mb-1">
@@ -231,6 +389,7 @@ const CreateProduct = () => {
                     <input
                         type="number"
                         name="originalPrice"
+                        step="0.01"
                         value={originalPrice}
                         className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none transition-colors"
                         onChange={(e) => setOriginalPrice(e.target.value)}
@@ -247,9 +406,13 @@ const CreateProduct = () => {
                     <input
                         type="number"
                         name="discountPrice"
+                        step="0.01"
                         value={discountPrice}
                         className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none transition-colors"
-                        onChange={(e) => setDiscountPrice(e.target.value)}
+                        onChange={(e) => {
+                            aiAppliedDiscount.current = null;
+                            setDiscountPrice(e.target.value);
+                        }}
                         placeholder="Enter price after discount (optional)"
                     />
                 </div>
