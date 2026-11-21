@@ -1,0 +1,76 @@
+{
+    "model_name": "Cartify Regional Advertisement Recommendation",
+    "version": "1.0",
+    "architecture": {
+        "stage_1": "HistGradientBoostingClassifier",
+        "stage_2": "HistGradientBoostingRegressor",
+        "ranking_method": "demand_probability_x_predicted_volume"
+    },
+    "classification_threshold": 0.75,
+    "feature_columns": [
+        "orders_current",
+        "orders_prev_1",
+        "orders_prev_2",
+        "orders_prev_3",
+        "orders_3m_avg",
+        "orders_3m_sum",
+        "customers_prev_1",
+        "customers_3m_sum",
+        "revenue_prev_1",
+        "revenue_3m_sum",
+        "demand_trend",
+        "region_month_orders",
+        "region_month_customers",
+        "region_month_revenue",
+        "category_month_orders",
+        "category_month_customers",
+        "category_month_revenue"
+    ],
+    "target_definition": {
+        "classifier": "future_has_demand",
+        "regressor": "log1p(future_orders)"
+    },
+    "training_scope": {
+        "feature_start": "2017-04",
+        "training_end": "2018-03",
+        "validation_period": [
+            "2018-04",
+            "2018-05"
+        ],
+        "test_period": [
+            "2018-06",
+            "2018-07"
+        ]
+    },
+    "training_filters": {
+        "minimum_region_orders": 50,
+        "minimum_category_orders": 100,
+        "filter_calculated_using_training_data_only": true
+    },
+    "stage_1_test_metrics": {
+        "accuracy": 0.83,
+        "precision": 0.5762,
+        "recall": 0.6222,
+        "f1": 0.5983,
+        "roc_auc": 0.8601,
+        "pr_auc": 0.673
+    },
+    "stage_2_test_metrics": {
+        "mae": 0.9443,
+        "rmse": 2.5223,
+        "r2": 0.8743
+    },
+    "ranking_test_metrics": {
+        "ndcg_at_5": 0.830929,
+        "top5_overlap": 0.547159,
+        "top5_demand_capture": 0.422467
+    },
+    "notes": [
+        "Region names are not direct ML features.",
+        "Category names are not direct ML features.",
+        "The model learns from regional and category demand statistics.",
+        "The external Olist dataset was used to develop and evaluate the methodology.",
+        "Production Cartify inference should calculate the same features from Cartify order history.",
+        "classification_threshold is for binary demand classification; ranking uses raw demand probability."
+    ]
+}

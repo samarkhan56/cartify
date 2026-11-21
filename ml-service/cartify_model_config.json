@@ -1,0 +1,22 @@
+{
+    "model_name": "Cartify Price Recommendation Model",
+    "selected_model": "Tuned Metadata Ridge Model",
+    "feature_type": "TF-IDF product metadata",
+    "metadata_fields": [
+        "title",
+        "brand",
+        "condition",
+        "specifications",
+        "features",
+        "description"
+    ],
+    "training_products": 800,
+    "test_products": 200,
+    "final_mae": 79.97,
+    "final_rmse": 137.04,
+    "final_mape": 43.08,
+    "final_r2": 0.6248,
+    "dataset_file": "smartphones_1000_verified_final.csv",
+    "training_file": "smartphones_train_800_verified.csv",
+    "testing_file": "smartphones_test_200_verified.csv"
+}

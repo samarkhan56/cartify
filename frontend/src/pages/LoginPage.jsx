@@ -5,7 +5,7 @@ import { AiOutlineUser, AiOutlineMail, AiOutlineLock, AiOutlineShop, AiOutlineEy
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { server } from '../server';
-import { loadUser } from '../redux/actions/user';
+import { loadSeller, loadUser } from '../redux/actions/user';
 
 const LoginPage = () => {
     const navigate = useNavigate();
@@ -64,6 +64,7 @@ const LoginPage = () => {
             }, { withCredentials: true });
             
             toast.success("Seller login successful!");
+            await dispatch(loadSeller());
             navigate("/dashboard");
         } catch (error) {
             const errorMsg = error.response?.data?.message || "Seller login failed. Please try again.";

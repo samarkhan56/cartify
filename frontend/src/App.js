@@ -42,6 +42,7 @@ const ReturnsPage = lazy(() => import("./pages/ReturnsPage"));
 const ShopDashboardPage = lazy(() => import("./pages/Shop/ShopDashboardPage"));
 const ShopCreateProduct = lazy(() => import("./pages/Shop/ShopCreateProduct"));
 const ShopAllProducts = lazy(() => import("./pages/Shop/ShopAllProducts"));
+const ShopAdvertisementPage = lazy(() => import("./pages/Shop/ShopAdvertisementPage"));
 const ShopCreateEvents = lazy(() => import("./pages/Shop/ShopCreateEvents"));
 const ShopAllEvents = lazy(() => import("./pages/Shop/ShopAllEvents"));
 const ShopAllCoupouns = lazy(() => import("./pages/Shop/ShopAllCoupouns"));
@@ -109,6 +110,14 @@ const App = () => {
         />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/product/:id" element={<ProductDetailsPage />} />
+        <Route
+          path="/dashboard-product/:id"
+          element={
+            <SellerProtectedRoute>
+              <ProductDetailsPage sellerPreview />
+            </SellerProtectedRoute>
+          }
+        />
         <Route path="/best-selling" element={<BestSellingPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/faq" element={<FAQPage />} />
@@ -249,6 +258,9 @@ const App = () => {
             </SellerProtectedRoute>
           }
         />
+        <Route path="/dashboard-advertisements" element={
+          <SellerProtectedRoute><ShopAdvertisementPage /></SellerProtectedRoute>
+        } />
 
         <Route
           path="/dashboard-withdraw-money"

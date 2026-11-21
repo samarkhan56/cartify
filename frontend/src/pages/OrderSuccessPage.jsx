@@ -171,7 +171,7 @@ const OrderSuccessPage = () => {
                             <p className="text-text-secondary">{orderData?.shippingAddress?.address2}</p>
                         )}
                         <p className="text-text-secondary">
-                            {orderData?.shippingAddress?.city || ""}, {orderData?.shippingAddress?.country || ""} {orderData?.shippingAddress?.zipCode || ""}
+                            {[orderData?.shippingAddress?.city, orderData?.shippingAddress?.state, orderData?.shippingAddress?.country].filter(Boolean).join(", ")} {orderData?.shippingAddress?.zipCode || ""}
                         </p>
                         <p className="text-text-secondary mt-2">
                             <span className="font-medium">Phone:</span> {orderData?.shippingAddress?.phoneNumber || user?.phoneNumber || "Not provided"}

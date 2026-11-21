@@ -150,11 +150,13 @@ export const deleteProduct = (id) => async (dispatch) => {
       type: "deleteProductSuccess",
       payload: data.message,
     });
+    return true;
   } catch (error) {
     dispatch({
       type: "deleteProductFailed",
       payload: getErrorMessage(error),
     });
+    return false;
   }
 };
 

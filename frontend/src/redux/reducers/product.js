@@ -37,6 +37,8 @@ export const productReducer = createReducer(initialState, (builder) => {
   })
   .addCase("productCreateRequest", (state) => {
     state.isLoading = true;
+    state.error = null;
+    state.success = false;
   })
   .addCase("productCreateSuccess", (state, action) => {
     state.isLoading = false;

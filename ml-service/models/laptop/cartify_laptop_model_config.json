@@ -1,0 +1,53 @@
+{
+  "model_name": "Cartify Laptop Price Recommendation Model",
+  "model_version": "1.0",
+  "category": "laptop",
+  "model_type": "TF-IDF + Log-Price Ridge Regression",
+  "production_training_rows": 1148,
+  "evaluation_train_rows": 918,
+  "evaluation_test_rows": 230,
+  "tfidf": {
+    "max_features": 20000,
+    "ngram_range": [
+      1,
+      2
+    ],
+    "min_df": 2,
+    "sublinear_tf": true
+  },
+  "ridge_alpha": 0.3,
+  "target_transform": "log1p/expm1",
+  "input_fields": [
+    "title",
+    "brand",
+    "condition",
+    "specifications",
+    "features",
+    "description"
+  ],
+  "currency": "USD",
+  "supported_conditions": [
+    "New",
+    "Refurbished"
+  ],
+  "locked_test_metrics": {
+    "mae": 191.1484813776109,
+    "rmse": 339.7044648477103,
+    "mape_percent": 29.636270347179188,
+    "r2": 0.6191309098407476
+  },
+  "baseline_metrics": {
+    "mae": 378.49330434782604,
+    "rmse": 565.4188683181852,
+    "mape_percent": 81.17296061247183,
+    "r2": -0.05514905068086029
+  },
+  "baseline_mae_improvement_percent": 49.49752632824645,
+  "notes": [
+    "Model is advisory and must not automatically set seller prices.",
+    "Premium, workstation and unusual gaming laptops have higher prediction uncertainty.",
+    "Model was trained using production-aligned metadata only.",
+    "Locked test metrics were measured before retraining the production artifact on all verified records."
+  ],
+  "sklearn_version": "1.6.1"
+}

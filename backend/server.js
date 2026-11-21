@@ -29,6 +29,7 @@ connectDatabase();
 const server = app.listen(process.env.PORT || 8000, () => {
   console.log(`Server is running on http://localhost:${process.env.PORT || 8000}`);
 });
+module.exports = server;
 
 // middlewares
 app.disable("x-powered-by");
@@ -83,6 +84,7 @@ const message = require("./controller/message");
 const conversation = require("./controller/conversation");
 const withdraw = require("./controller/withdraw");
 const notification = require("./controller/notification");
+const advertising = require("./controller/advertising");
 
 app.use("/api/v2", apiRateLimiter);
 app.use(
@@ -108,6 +110,7 @@ app.use("/api/v2/product", product);
 app.use("/api/v2/event", event);
 app.use("/api/v2/coupon", coupon);
 app.use("/api/v2/payment", payment);
+app.use("/api/v2/advertising", advertising);
 
 // error handler
 app.use(ErrorHandler);

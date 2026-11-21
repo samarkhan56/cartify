@@ -8,6 +8,7 @@ const Shop = require("../model/shop");
 const { upload } = require("../multer");
 const ErrorHandler = require("../utils/ErrorHandler");
 const fs = require("fs");
+const { isValidObjectId } = require("mongoose");
 const { recommendPrice } = require("../utils/priceRecommendation");
 const { validateProductTaxonomy } = require("../utils/productTaxonomy");
 
@@ -236,6 +237,39 @@ router.get(
     } catch (error) {
       return next(new ErrorHandler(error, 400));
     }
+  })
+);
+
+// Public details follow the same moderation/visibility rules as public browsing.
+router.get(
+  "/get-product/:id",
+  catchAsyncErrors(async (req, res, next) => {
+    if (!isValidObjectId(req.params.id)) {
+      return next(new ErrorHandler("Invalid product id.", 400));
+    }
+    const product = await Product.findOne({ _id: req.params.id, ...visibleProductQuery })
+      .select("-shop.password");
+    if (!product) {
+      return next(new ErrorHandler("Product not found or unavailable.", 404));
+    }
+    res.status(200).json({ success: true, product });
+  })
+);
+
+// A seller may preview only their own product, including pending/hidden products.
+router.get(
+  "/get-shop-product/:id",
+  isSeller,
+  catchAsyncErrors(async (req, res, next) => {
+    if (!isValidObjectId(req.params.id)) {
+      return next(new ErrorHandler("Invalid product id.", 400));
+    }
+    const product = await Product.findOne({ _id: req.params.id, shopId: req.seller.id })
+      .select("-shop.password");
+    if (!product) {
+      return next(new ErrorHandler("Product not found or unavailable.", 404));
+    }
+    res.status(200).json({ success: true, product });
   })
 );
 

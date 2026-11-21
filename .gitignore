@@ -8,8 +8,50 @@ backend/node_modules
 socket/node_modules
 frontend/build
 build
+ml-service/.venv/
+ml-service/__pycache__/
 *.log
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Credentials and local environment variants; retain documented placeholders.
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+*.p12
+
+# Dependencies, Python caches and generated checks.
+**/node_modules/
+**/.venv/
+**/venv/
+**/__pycache__/
+*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+coverage/
+.coverage
+*.tmp
+*.bak
+
+# Local database/account contents and runtime evidence stay on disk, outside Git.
+backend/demo/
+*.xlsx
+*.xlsm
+*.bson
+*.dump
+dump/
+dumps/
+docs/e2e-evidence/
+docs/phase1-end-to-end-validation.md
+PROJECT_CONTEXT.md
+
+# One-off browser/runtime verification helpers, not application entry points.
+backend/scripts/advertising-browser-check.js
+backend/scripts/verify-advertising-endpoints.js
+backend/scripts/verify-advertising-runtime.js
+backend/scripts/verify-fyp-accounts.js

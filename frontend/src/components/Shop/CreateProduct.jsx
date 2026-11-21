@@ -118,7 +118,7 @@ const CreateProduct = () => {
         }, inputKey));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (seller?.accountStatus === "suspended") {
@@ -167,7 +167,11 @@ const CreateProduct = () => {
         newForm.append("stock", stock);
         newForm.append("shopId", seller._id);
         
-        dispatch(createProduct(newForm));
+        try {
+            await dispatch(createProduct(newForm));
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (

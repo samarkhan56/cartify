@@ -42,6 +42,31 @@ const submitProduct = async () => {
 };
 const lastCreateForm = () => axios.post.mock.calls.find(([url]) => url.endsWith("/create-product"))[1];
 
+test("failed product creation, including repeated identical errors, resets submission and allows correction and retry", async () => {
+  fillPhone();
+  fillCreationFields();
+  let failCreation;
+  axios.post.mockImplementationOnce(() => new Promise((_resolve, reject) => { failCreation = reject; }));
+  await submitProduct();
+  expect(screen.getByRole("button", { name: "Creating Product..." })).toBeDisabled();
+  await act(async () => failCreation({ response: { data: { message: "Product could not be created" } } }));
+  expect(screen.getByRole("button", { name: "Create Product" })).toBeEnabled();
+  expect(toast.error).toHaveBeenCalledWith("Product could not be created");
+  axios.post.mockRejectedValueOnce({ response: { data: { message: "Product could not be created" } } });
+  await submitProduct();
+  expect(screen.getByRole("button", { name: "Create Product" })).toBeEnabled();
+  expect(toast.error).toHaveBeenCalledTimes(2);
+  change('input[name="name"]', "Corrected product name");
+  axios.post.mockResolvedValueOnce({ data: { product: { _id: "created-product" } } });
+  await submitProduct();
+  expect(axios.post).toHaveBeenCalledTimes(3);
+  expect(axios.post.mock.calls[2][1].get("name")).toBe("Corrected product name");
+  expect(store.getState().products.product._id).toBe("created-product");
+  expect(store.getState().products.success).toBe(true);
+  expect(store.getState().products.error).toBeNull();
+  expect(toast.error).toHaveBeenCalledTimes(2);
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   axios.post.mockResolvedValue(response);

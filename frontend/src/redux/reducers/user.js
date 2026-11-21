@@ -5,7 +5,7 @@ const initialState = {
   isSeller: false,
   user: null,
   seller: null,
-  loading: false,
+  loading: true,
   sellerLoading: false,
   error: null,
 };

@@ -1,0 +1,45 @@
+{
+  "model_name": "Cartify Adult Performance Running Shoe Price Recommendation Model",
+  "version": "1.0",
+  "category": "adult_performance_running_shoes",
+  "production_training_rows": 1361,
+  "architecture": {
+    "word_tfidf": "1-2 grams, max_features=20000, min_df=2",
+    "title_char_tfidf": "char_wb 3-5 grams, max_features=12000, min_df=2",
+    "structured_features": [
+      "brand",
+      "gender",
+      "running_type"
+    ],
+    "target": "log1p(price)",
+    "regressor": "Ridge",
+    "alpha": 1.0
+  },
+  "official_locked_test_metrics": {
+    "mae": 25.39,
+    "rmse": 35.66,
+    "mape_percent": 27.93,
+    "r2": 0.3078,
+    "mean_bias": -5.92,
+    "baseline_mae": 33.37,
+    "mae_improvement_percent": 23.92,
+    "rmse_improvement_percent": 18.55
+  },
+  "seller_inputs": [
+    "title",
+    "brand",
+    "gender",
+    "running_type",
+    "selected specifications",
+    "features"
+  ],
+  "guardrails": {
+    "advisory_only": true,
+    "recommended_original_price_min_usd": 50,
+    "recommended_original_price_max_usd": 150,
+    "maximum_recommendation_deviation_percent": 30,
+    "require_prediction_inside_supported_range": true,
+    "suppress_outside_supported_range": true,
+    "suppress_excessive_seller_price_disagreement": true
+  }
+}

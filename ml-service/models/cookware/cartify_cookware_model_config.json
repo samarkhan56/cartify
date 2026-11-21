@@ -1,0 +1,52 @@
+{
+  "model_name": "Cartify Cookware Set Price Recommendation Model",
+  "model_version": "1.0",
+  "category": "cookware_sets",
+  "architecture": "Word TF-IDF + Title Character TF-IDF + Brand OneHot + Log-Price Ridge",
+  "ridge_alpha": 0.1,
+  "production_training_rows": 856,
+  "official_locked_test_rows": 173,
+  "official_metrics": {
+    "mae_usd": 70.28,
+    "rmse_usd": 127.33,
+    "mape_percent": 45.88,
+    "r2": 0.6371,
+    "baseline_mae_usd": 121.24,
+    "mae_improvement_percent": 42.03,
+    "rmse_improvement_percent": 42.28
+  },
+  "evaluation_note": "Official metrics come from the original 173-row locked test evaluation before final production-only contamination cleanup.",
+  "seller_available_inputs": [
+    "title",
+    "brand",
+    "material",
+    "color",
+    "size",
+    "handle_material",
+    "dishwasher_safe",
+    "compatibility",
+    "closure_material",
+    "included_components",
+    "finish",
+    "special_features",
+    "product_dimensions",
+    "item_weight",
+    "features",
+    "description"
+  ],
+  "excluded_signals": [
+    "Amazon ratings",
+    "Amazon review counts",
+    "Best Sellers Rank",
+    "Amazon listing date",
+    "target price",
+    "engineered piece count"
+  ],
+  "phase_1_guardrails": {
+    "advisory_only": true,
+    "recommended_original_price_min_usd": 100,
+    "recommended_original_price_max_usd": 400,
+    "maximum_recommendation_deviation_from_original_price_percent": 35,
+    "note": "Suppress recommendation outside supported range or when recommendation differs too strongly from seller-entered original price."
+  }
+}

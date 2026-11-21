@@ -6,9 +6,9 @@
     "node": "18.16.0"
   },
   "scripts": {
-    "test": "node --test tests/priceRecommendation.test.js",
+    "test": "node --test tests/priceRecommendation.test.js tests/orderStatus.test.js tests/productDetails.test.js tests/localLauncher.test.js tests/orderShippingAddress.test.js tests/advertising.test.js tests/advertisingDemoPlan.test.js tests/accountImport.test.js tests/accountAuthentication.test.js",
     "dev": "nodemon server.js",
-    "start": "node server.js",
+    "start": "node scripts/start-local.js",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false"
   },
   "author": "Om Prakash Pattjoshi",
