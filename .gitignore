@@ -49,6 +49,7 @@ dumps/
 docs/e2e-evidence/
 docs/phase1-end-to-end-validation.md
 PROJECT_CONTEXT.md
+FYP Product Assets/
 
 # One-off browser/runtime verification helpers, not application entry points.
 backend/scripts/advertising-browser-check.js

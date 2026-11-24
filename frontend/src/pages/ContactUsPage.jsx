@@ -51,16 +51,16 @@ const ContactUsPage = () => {
         {
             icon: <AiOutlinePhone size={24} />,
             title: "Call Us",
-            details: "+1 (234) 567-8900",
-            subDetail: "Mon-Fri, 9am-6pm EST",
-            link: "tel:+12345678900"
+            details: "+92 300 1234567",
+            subDetail: "Mon-Fri, 9am-6pm PKT",
+            link: "tel:+923001234567"
         },
         {
             icon: <AiOutlineEnvironment size={24} />,
             title: "Visit Us",
-            details: "123 Commerce Street",
-            subDetail: "New York, NY 10001, USA",
-            link: "https://maps.google.com"
+            details: "Islamabad, Pakistan",
+            subDetail: "",
+            link: "https://www.google.com/maps?q=Islamabad%2C%20Pakistan"
         },
         {
             icon: <AiOutlineClockCircle size={24} />,
@@ -126,7 +126,7 @@ const ContactUsPage = () => {
                                     value={formData.name}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none focus:ring-1 focus:ring-[#F97316] transition-colors"
-                                    placeholder="John Doe"
+                                    placeholder="Enter your name"
                                 />
                             </div>
                             
@@ -141,7 +141,7 @@ const ContactUsPage = () => {
                                     value={formData.email}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none focus:ring-1 focus:ring-[#F97316] transition-colors"
-                                    placeholder="you@example.com"
+                                    placeholder="Enter your email address"
                                 />
                             </div>
                             
@@ -156,7 +156,7 @@ const ContactUsPage = () => {
                                     value={formData.subject}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none focus:ring-1 focus:ring-[#F97316] transition-colors"
-                                    placeholder="How can we help you?"
+                                    placeholder="Enter subject"
                                 />
                             </div>
                             
@@ -171,7 +171,7 @@ const ContactUsPage = () => {
                                     value={formData.message}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-[#E5E7EB] rounded-lg focus:border-[#F97316] focus:outline-none focus:ring-1 focus:ring-[#F97316] transition-colors resize-none"
-                                    placeholder="Tell us more about your inquiry..."
+                                    placeholder="Enter your message"
                                 />
                             </div>
                             
@@ -196,7 +196,7 @@ const ContactUsPage = () => {
                             <div className="h-64 w-full">
                                 <iframe
                                     title="Cartify Location"
-                                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3024.2219901290355!2d-74.00369368400567!3d40.71312937933099!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x89c25a316bb3c173%3A0x942cf8efbc391ee!2sWall%20St%2C%20New%20York%2C%20NY%2C%20USA!5e0!3m2!1sen!2s!4v1699999999999!5m2!1sen!2s"
+                                    src="https://maps.google.com/maps?q=Islamabad%2C%20Pakistan&z=12&output=embed"
                                     width="100%"
                                     height="100%"
                                     style={{ border: 0 }}
