@@ -103,7 +103,7 @@ const Header = ({ activeHeading }) => {
       <header
         className={`${
           active ? "fixed top-0 left-0 right-0 z-50 bg-white shadow-md" : "bg-white"
-        } hidden 800px:block transition-all duration-300 border-b border-gray-100`}
+        } hidden lg:block transition-all duration-300 border-b border-gray-100`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           {/* Main Header Row */}
@@ -139,9 +139,6 @@ const Header = ({ activeHeading }) => {
               {/* <Link to="/blog" className="text-gray-700 hover:text-brand-orange transition-colors text-sm font-medium">
                 Blog
               </Link> */}
-              <Link to="/pages" className="text-gray-700 hover:text-brand-orange transition-colors text-sm font-medium">
-                Pages
-              </Link>
               <Link to="/contact" className="text-gray-700 hover:text-brand-orange transition-colors text-sm font-medium">
                 Contact
               </Link>
@@ -242,7 +239,7 @@ const Header = ({ activeHeading }) => {
       </header>
 
       {/* ========== MOBILE HEADER ========== */}
-      <div className="800px:hidden bg-white border-b border-gray-100">
+      <div className="lg:hidden bg-white border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
           <BiMenuAltLeft size={24} onClick={() => setOpen(true)} className="text-gray-700" />
           <Link to="/">
@@ -319,9 +316,12 @@ const Header = ({ activeHeading }) => {
                 Category
                 <IoIosArrowDown size={12} />
               </button>
+              {dropDown && (
+                <div className="relative -ml-5">
+                  <DropDown categoriesData={categoriesData} setDropDown={setDropDown} />
+                </div>
+              )}
               <Link to="/products" className="block text-gray-700">Latest</Link>
-              <Link to="/blog" className="block text-gray-700">Blog</Link>
-              <Link to="/pages" className="block text-gray-700">Pages</Link>
               <Link to="/contact" className="block text-gray-700">Contact</Link>
               <Link to="/login" className="block text-gray-700">Sign In</Link>
               <Link to="/shop-create" className="block text-gray-700">Become a Seller</Link>

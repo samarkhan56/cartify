@@ -45,7 +45,8 @@ const getProductPrice = (product) => {
     : originalPrice;
 };
 
-const validateShippingAddress = (shippingAddress) => {
+const snapshotShippingAddress = (shippingAddress) => {
+  if (!shippingAddress || typeof shippingAddress !== "object" || Array.isArray(shippingAddress)) return null;
   const requiredFields = [
     "fullName",
     "email",
@@ -53,12 +54,20 @@ const validateShippingAddress = (shippingAddress) => {
     "address1",
     "zipCode",
     "country",
+    "state",
     "city",
   ];
 
-  return requiredFields.every((field) =>
-    String(shippingAddress?.[field] || "").trim()
-  );
+  const snapshot = {};
+  for (const field of [...requiredFields, "address2"]) {
+    const value = shippingAddress[field];
+    const legacyNumber = ["phoneNumber", "zipCode"].includes(field) &&
+      typeof value === "number" && Number.isFinite(value);
+    if (value != null && typeof value !== "string" && !legacyNumber) return null;
+    snapshot[field] = String(value ?? "").trim();
+    if (field !== "address2" && !snapshot[field]) return null;
+  }
+  return snapshot;
 };
 
 const buildOrderItems = async (cart) => {
@@ -106,6 +115,8 @@ const buildOrderItems = async (cart) => {
       name: product.name,
       description: product.description,
       category: product.category,
+      subcategory: product.subcategory,
+      productType: product.productType,
       images: product.images,
       shopId: product.shopId,
       shop: product.shop,
@@ -474,7 +485,8 @@ router.post(
       return next(new ErrorHandler("Invalid payment method selected.", 400));
     }
 
-    if (!validateShippingAddress(shippingAddress)) {
+    const shippingSnapshot = snapshotShippingAddress(shippingAddress);
+    if (!shippingSnapshot) {
       return next(new ErrorHandler("Please provide a complete shipping address.", 400));
     }
 
@@ -526,7 +538,7 @@ router.post(
         shopOrders.map((shopOrder) =>
           Order.create({
             cart: shopOrder.items,
-            shippingAddress,
+            shippingAddress: { ...shippingSnapshot },
             user,
             totalPrice: shopOrder.totalPrice,
             subTotalPrice: shopOrder.subTotalPrice,
@@ -633,13 +645,14 @@ router.put(
       return next(new ErrorHandler("Invalid order status update.", 400));
     }
 
+    const enteringDelivered = order.status !== "Delivered" && req.body.status === "Delivered";
     order.status = req.body.status;
     order.statusHistory.push({
       status: req.body.status,
       changedBy: `seller:${req.seller.id}`,
     });
 
-    if (req.body.status === "Delivered") {
+    if (enteringDelivered) {
       order.deliveredAt = Date.now();
 
       if (order.paymentInfo?.type === "Cash On Delivery") {

@@ -1,12 +1,26 @@
 const mongoose = require("mongoose");
 
+// New orders require complete snapshots; legacy records may have no province.
+const requiredForNewOrder = function () { return this.ownerDocument().isNew; };
+const shippingAddressSchema = new mongoose.Schema({
+  fullName: { type: String, trim: true, required: requiredForNewOrder },
+  email: { type: String, trim: true, required: requiredForNewOrder },
+  phoneNumber: { type: String, trim: true, required: requiredForNewOrder },
+  country: { type: String, trim: true, required: requiredForNewOrder },
+  state: { type: String, trim: true, required: requiredForNewOrder },
+  city: { type: String, trim: true, required: requiredForNewOrder },
+  zipCode: { type: String, trim: true, required: requiredForNewOrder },
+  address1: { type: String, trim: true, required: requiredForNewOrder },
+  address2: { type: String, trim: true },
+}, { _id: false, strict: false });
+
 const orderSchema = new mongoose.Schema({
   cart: {
     type: Array,
     required: true,
   },
   shippingAddress: {
-    type: Object,
+    type: shippingAddressSchema,
     required: true,
   },
   user: {
@@ -90,7 +104,7 @@ const orderSchema = new mongoose.Schema({
   ],
   createdAt: {
     type: Date,
-    default: Date.now(),
+    default: Date.now,
   },
 });
 

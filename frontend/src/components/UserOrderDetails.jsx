@@ -199,7 +199,7 @@ const UserOrderDetails = () => {
                 <br />
                 {data.shippingAddress?.address1} {data.shippingAddress?.address2}
                 <br />
-                {data.shippingAddress?.city}, {data.shippingAddress?.country} {data.shippingAddress?.zipCode}
+                {[data.shippingAddress?.city, data.shippingAddress?.state, data.shippingAddress?.country].filter(Boolean).join(", ")} {data.shippingAddress?.zipCode}
                 <br />
                 {data.shippingAddress?.phoneNumber || data.user?.phoneNumber}
               </p>

@@ -26,7 +26,7 @@ import { toast } from "react-toastify";
 import Ratings from "./Ratings";
 import axios from "axios";
 
-const ProductDetails = ({ data }) => {
+const ProductDetails = ({ data, isSellerPreview = false }) => {
   const { products } = useSelector((state) => state.products);
   const { user, isAuthenticated } = useSelector((state) => state.user);
   const { wishlist } = useSelector((state) => state.wishlist);
@@ -40,16 +40,16 @@ const ProductDetails = ({ data }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    dispatch(getAllProductsShop(data?.shop?._id));
+    if (!isSellerPreview) dispatch(getAllProductsShop(data?.shop?._id));
     if (wishlist && wishlist.find((i) => i._id === data?._id)) {
       setClick(true);
     } else {
       setClick(false);
     }
-  }, [data, dispatch, wishlist]);
+  }, [data, dispatch, wishlist, isSellerPreview]);
 
   useEffect(() => {
-    if (!data?._id) {
+    if (!data?._id || isSellerPreview) {
       return;
     }
 
@@ -86,7 +86,7 @@ const ProductDetails = ({ data }) => {
         JSON.stringify([recentlyViewedProduct])
       );
     }
-  }, [data]);
+  }, [data, isSellerPreview]);
 
   useEffect(() => {
     setCount(1);
@@ -201,13 +201,13 @@ const ProductDetails = ({ data }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Back Button */}
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => navigate(isSellerPreview ? "/dashboard-products" : -1)}
             className="flex items-center gap-2 text-text-secondary hover:text-brand-orange transition-colors mb-6"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
-            Back to Products
+            {isSellerPreview ? "Back to All Products" : "Back to Products"}
           </button>
 
           <div className="bg-card rounded-2xl shadow-lg overflow-hidden">
@@ -353,7 +353,7 @@ const ProductDetails = ({ data }) => {
                   </div>
                 )}
 
-                <div className="flex items-center gap-4 mb-6">
+                {!isSellerPreview && <div className="flex items-center gap-4 mb-6">
                   <span className="text-text-primary font-medium">Quantity:</span>
                   <div className="flex items-center border border-border-gray rounded-lg">
                     <button
@@ -372,10 +372,10 @@ const ProductDetails = ({ data }) => {
                       <AiOutlinePlus size={16} />
                     </button>
                   </div>
-                </div>
+                </div>}
 
                 {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                {!isSellerPreview && <div className="flex flex-col sm:flex-row gap-4 mb-6">
                   <button
                     onClick={() => addToCartHandler(data._id)}
                     disabled={data.stock < 1}
@@ -391,7 +391,7 @@ const ProductDetails = ({ data }) => {
                     {click ? <AiFillHeart size={20} /> : <AiOutlineHeart size={20} />}
                     {click ? "Added to Wishlist" : "Add to Wishlist"}
                   </button>
-                </div>
+                </div>}
 
                 {/* Seller Info */}
                 <div className="border-t border-border-gray pt-6">
@@ -414,13 +414,13 @@ const ProductDetails = ({ data }) => {
                         <span className="text-sm text-text-secondary">{averageRating} Seller Rating</span>
                       </div>
                     </div>
-                    <button
+                    {!isSellerPreview && <button
                       onClick={handleMessageSubmit}
                       className="ml-auto flex items-center gap-2 text-brand-orange hover:text-orange-hover transition-colors"
                     >
                       <AiOutlineMessage size={20} />
                       <span className="text-sm">Contact Seller</span>
-                    </button>
+                    </button>}
                   </div>
                 </div>
 
@@ -451,7 +451,7 @@ const ProductDetails = ({ data }) => {
               products={products}
               totalReviewsLength={totalReviewsLength}
               averageRating={averageRating}
-              onAskSeller={handleMessageSubmit}
+              onAskSeller={isSellerPreview ? null : handleMessageSubmit}
             />
           </div>
         </div>
@@ -699,14 +699,14 @@ const ProductQuestions = ({ data, onAskSeller }) => {
             Common product questions based on current listing information.
           </p>
         </div>
-        <button
+        {onAskSeller && <button
           type="button"
           onClick={onAskSeller}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-orange px-4 py-2 text-sm font-semibold text-white hover:bg-orange-hover"
         >
           <AiOutlineQuestionCircle size={18} />
           Ask seller
-        </button>
+        </button>}
       </div>
 
       <div className="space-y-3">

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { AiOutlineMail, AiOutlineLock, AiOutlineEye, AiOutlineEyeInvisible, AiOutlineShop } from 'react-icons/ai';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { server } from '../server';
+import { loadSeller } from '../redux/actions/user';
 
 const ShopLoginPage = () => {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const { isSeller } = useSelector((state) => state.seller);
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -32,6 +34,7 @@ const ShopLoginPage = () => {
             }, { withCredentials: true });
             
             toast.success("Login successful!");
+            await dispatch(loadSeller());
             navigate("/dashboard");
         } catch (error) {
             const errorMsg = error.response?.data?.message || "Login failed. Please try again.";

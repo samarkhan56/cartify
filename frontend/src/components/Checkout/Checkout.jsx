@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Country, State } from "country-state-city";
+import { Country, State, City } from "country-state-city";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
@@ -16,6 +16,7 @@ import {
   AiOutlineShoppingCart,
 } from "react-icons/ai";
 import { BiMapPin } from "react-icons/bi";
+import { checkoutAddressDraftKey, readCheckoutAddressDraft, hasCompleteShippingAddress } from "../../utils/shippingAddress";
 
 const Checkout = () => {
   const { user } = useSelector((state) => state.user);
@@ -27,15 +28,17 @@ const Checkout = () => {
   );
   
   // State variables for form fields
-  const [fullName, setFullName] = useState(user?.name || "");
-  const [email, setEmail] = useState(user?.email || "");
-  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || "");
-  const [country, setCountry] = useState("");
-  const [city, setCity] = useState("");
+  const [draft] = useState(() => readCheckoutAddressDraft(user?._id));
+  const [fullName, setFullName] = useState(draft.fullName ?? user?.name ?? "");
+  const [email, setEmail] = useState(draft.email ?? user?.email ?? "");
+  const [phoneNumber, setPhoneNumber] = useState(draft.phoneNumber ?? user?.phoneNumber ?? "");
+  const [country, setCountry] = useState(draft.country || "");
+  const [state, setState] = useState(draft.state || "");
+  const [city, setCity] = useState(draft.city || "");
   const [userInfo, setUserInfo] = useState(false);
-  const [address1, setAddress1] = useState("");
-  const [address2, setAddress2] = useState("");
-  const [zipCode, setZipCode] = useState("");
+  const [address1, setAddress1] = useState(draft.address1 || "");
+  const [address2, setAddress2] = useState(draft.address2 || "");
+  const [zipCode, setZipCode] = useState(draft.zipCode || "");
   const [couponCode, setCouponCode] = useState("");
   const [couponCodeData, setCouponCodeData] = useState(null);
   const [discountPrice, setDiscountPrice] = useState(null);
@@ -44,6 +47,12 @@ const Checkout = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem(checkoutAddressDraftKey(user?._id), JSON.stringify({
+      fullName, email, phoneNumber, country, state, city, address1, address2, zipCode,
+    }));
+  }, [user?._id, fullName, email, phoneNumber, country, state, city, address1, address2, zipCode]);
 
   const subTotalPrice = selectedCartItems.reduce(
     (acc, item) => acc + item.qty * item.discountPrice,
@@ -62,29 +71,22 @@ const Checkout = () => {
       return;
     }
 
-    if (
-      fullName === "" ||
-      email === "" ||
-      phoneNumber === "" ||
-      address1 === "" ||
-      zipCode === "" ||
-      country === "" ||
-      city === ""
-    ) {
+    const shippingAddress = {
+      fullName: String(fullName).trim(),
+      email: String(email).trim(),
+      phoneNumber: String(phoneNumber).trim(),
+      address1: String(address1).trim(),
+      address2: String(address2).trim(),
+      zipCode: String(zipCode).trim(),
+      country: Country.getCountryByCode(country)?.name || country,
+      state: (State.getStateByCodeAndCountry(state, country)?.name || state).trim(),
+      city: city.trim(),
+    };
+
+    if (!hasCompleteShippingAddress(shippingAddress)) {
       toast.error("Please fill in all required fields!");
       return;
     }
-    
-    const shippingAddress = {
-      fullName,
-      email,
-      phoneNumber,
-      address1,
-      address2,
-      zipCode,
-      country,
-      city,
-    };
 
     const orderData = {
       cart: selectedCartItems,
@@ -159,6 +161,8 @@ const Checkout = () => {
                 user={user}
                 country={country}
                 setCountry={setCountry}
+                state={state}
+                setState={setState}
                 city={city}
                 setCity={setCity}
                 userInfo={userInfo}
@@ -230,6 +234,8 @@ const ShippingInfo = ({
   user,
   country,
   setCountry,
+  state,
+  setState,
   city,
   setCity,
   userInfo,
@@ -247,6 +253,22 @@ const ShippingInfo = ({
   phoneNumber,
   setPhoneNumber,
 }) => {
+  const states = State.getStatesOfCountry(country);
+  const cities = City.getCitiesOfState(country, state);
+  const selectSavedAddress = (item) => {
+    const selectedCountry = Country.getCountryByCode(item.country) ||
+      Country.getAllCountries().find((entry) => entry.name === item.country);
+    const countryCode = selectedCountry?.isoCode || "";
+    const selectedState = State.getStatesOfCountry(countryCode).find((entry) =>
+      [entry.isoCode, entry.name].includes(item.state || item.city));
+    // Old profile "city" values were actually province codes; never invent a city.
+    setCountry(countryCode);
+    setState(selectedState?.isoCode || (item.state && !State.getStatesOfCountry(countryCode).length ? item.state : ""));
+    setCity(item.state ? item.city || "" : "");
+    setAddress1(item.address1 || "");
+    setAddress2(item.address2 || "");
+    setZipCode(String(item.zipCode ?? ""));
+  };
   return (
     <div className="p-6">
       <form className="space-y-4">
@@ -302,13 +324,101 @@ const ShippingInfo = ({
               />
             </div>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
-              Zip Code <span className="text-red-500">*</span>
+            <label htmlFor="shipping-country" className="block text-sm font-medium text-text-primary mb-1">
+              Country <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <AiOutlineGlobal className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              <select
+                id="shipping-country"
+                required
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none appearance-none"
+                value={country}
+                onChange={(e) => { setCountry(e.target.value); setState(""); setCity(""); }}
+              >
+                <option value="">Select Country</option>
+                {Country &&
+                  Country.getAllCountries().map((item) => (
+                    <option key={item.isoCode} value={item.isoCode}>
+                      {item.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label htmlFor="shipping-state" className="block text-sm font-medium text-text-primary mb-1">
+              State / Province <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <AiOutlineEnvironment className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              {country && states.length === 0 ? <input
+                id="shipping-state"
+                type="text"
+                required
+                value={state}
+                onChange={(e) => { setState(e.target.value); setCity(""); }}
+                placeholder="Enter state / province"
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+              /> : <select
+                id="shipping-state"
+                required
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none appearance-none"
+                value={state}
+                onChange={(e) => { setState(e.target.value); setCity(""); }}
+                disabled={!country}
+              >
+                <option value="">Select State / Province</option>
+                {states.map((item) => (
+                    <option key={item.isoCode} value={item.isoCode}>
+                      {item.name}
+                    </option>
+                  ))}
+              </select>}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="shipping-city" className="block text-sm font-medium text-text-primary mb-1">
+              City <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <AiOutlineEnvironment className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+              {state && cities.length === 0 ? <input
+                id="shipping-city"
+                type="text"
+                required
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="Enter city"
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none transition-colors"
+              /> : <select
+                id="shipping-city"
+                required
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                disabled={!country || !state}
+                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none appearance-none"
+              >
+                <option value="">Select City</option>
+                {cities.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
+              </select>}
+            </div>
+          </div>
+          <div>
+            <label htmlFor="shipping-zip" className="block text-sm font-medium text-text-primary mb-1">
+              ZIP / Postal Code <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <BiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
               <input
+                id="shipping-zip"
                 type="text"
                 value={zipCode}
                 onChange={(e) => setZipCode(e.target.value)}
@@ -322,56 +432,11 @@ const ShippingInfo = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
-              Country <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <AiOutlineGlobal className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
-              <select
-                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none appearance-none"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-              >
-                <option value="">Select Country</option>
-                {Country &&
-                  Country.getAllCountries().map((item) => (
-                    <option key={item.isoCode} value={item.isoCode}>
-                      {item.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
-              City <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <AiOutlineEnvironment className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
-              <select
-                className="w-full pl-10 pr-4 py-2 border border-border-gray rounded-lg focus:border-brand-orange focus:outline-none appearance-none"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                disabled={!country}
-              >
-                <option value="">Select City</option>
-                {State &&
-                  State.getStatesOfCountry(country).map((item) => (
-                    <option key={item.isoCode} value={item.isoCode}>
-                      {item.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-text-primary mb-1">
+            <label htmlFor="shipping-address1" className="block text-sm font-medium text-text-primary mb-1">
               Address Line 1 <span className="text-red-500">*</span>
             </label>
             <input
+              id="shipping-address1"
               type="text"
               value={address1}
               onChange={(e) => setAddress1(e.target.value)}
@@ -412,18 +477,12 @@ const ShippingInfo = ({
                       type="radio"
                       name="savedAddress"
                       className="w-4 h-4 text-brand-orange"
-                      onClick={() => {
-                        setAddress1(item.address1);
-                        setAddress2(item.address2);
-                        setZipCode(item.zipCode);
-                        setCountry(item.country);
-                        setCity(item.city);
-                      }}
+                      onClick={() => selectSavedAddress(item)}
                     />
                     <div>
                       <p className="font-medium text-text-primary">{item.addressType}</p>
                       <p className="text-sm text-text-secondary">{item.address1}, {item.address2}</p>
-                      <p className="text-sm text-text-secondary">{item.city}, {item.country} - {item.zipCode}</p>
+                      <p className="text-sm text-text-secondary">{[item.city, item.state, item.country].filter(Boolean).join(", ")} - {item.zipCode}</p>
                     </div>
                   </label>
                 ))}

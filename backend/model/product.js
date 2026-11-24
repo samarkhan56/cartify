@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { PRODUCT_TAXONOMY, PRODUCT_CONDITIONS, validateProductTaxonomy } = require("../utils/productTaxonomy");
 
 const productSchema = new mongoose.Schema({
   name: {
@@ -15,6 +16,21 @@ const productSchema = new mongoose.Schema({
   },
   tags: {
     type: String,
+  },
+  subcategory: {
+    type: String,
+    trim: true,
+    enum: [...PRODUCT_TAXONOMY.map((entry) => entry.subcategory), ""],
+  },
+  productType: {
+    type: String,
+    trim: true,
+    enum: [...PRODUCT_TAXONOMY.map((entry) => entry.productType), ""],
+  },
+  condition: {
+    type: String,
+    trim: true,
+    enum: [...PRODUCT_CONDITIONS, ""],
   },
   brand: {
     type: String,
@@ -126,6 +142,10 @@ const productSchema = new mongoose.Schema({
     type: Date,
     default: Date.now(),
   },
+});
+
+productSchema.pre("validate", function () {
+  validateProductTaxonomy(this);
 });
 
 module.exports = mongoose.model("Product", productSchema);

@@ -187,6 +187,29 @@ export const brandingData = [
   },
 ];
 
+// Optional taxonomy supplements the existing category labels.
+export const productTaxonomy = {
+  "Mobile and Tablets": [
+    { subcategory: "Mobile Phones", productType: "smartphone", label: "Smartphone", aiPriceSupported: true },
+    { subcategory: "Tablets", productType: "tablet", label: "Tablet", aiPriceSupported: false },
+  ],
+  "Computers and Laptops": [
+    { subcategory: "Laptops", productType: "laptop", label: "Laptop", aiPriceSupported: true },
+  ],
+  "Others": [
+    { subcategory: "Cookware Sets", productType: "cookware", label: "Cookware", aiPriceSupported: true },
+  ],
+  "Shoes": [
+    { subcategory: "Adult Performance Running Shoes", productType: "running_shoes", label: "Adult Performance Running Shoes", aiPriceSupported: true },
+  ],
+};
+
+export const productConditions = [
+  { value: "new", label: "New" },
+  { value: "used", label: "Used" },
+  { value: "refurbished", label: "Refurbished" },
+];
+
 // categories data
 export const categoriesData = [
   {

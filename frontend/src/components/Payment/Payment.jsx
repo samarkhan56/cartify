@@ -18,6 +18,7 @@ import {
 import { FaMoneyBillWave } from "react-icons/fa";
 import { server } from "../../server";
 import { removePurchasedCartItems } from "../../redux/actions/cart";
+import { checkoutAddressDraftKey, hasCompleteShippingAddress } from "../../utils/shippingAddress";
 
 const METHOD_STRIPE = "stripe";
 const METHOD_COD = "cod";
@@ -41,7 +42,13 @@ const Payment = ({ isStripeAvailable = false }) => {
     }
 
     try {
-      setOrderData(JSON.parse(storedOrder));
+      const savedOrder = JSON.parse(storedOrder);
+      if (!hasCompleteShippingAddress(savedOrder?.shippingAddress)) {
+        toast.error("Please complete your shipping address, including State / Province.");
+        navigate("/checkout");
+        return;
+      }
+      setOrderData(savedOrder);
     } catch (error) {
       toast.error("Your saved order is invalid. Please checkout again.");
       navigate("/checkout");
@@ -113,6 +120,7 @@ const Payment = ({ isStripeAvailable = false }) => {
     };
 
     localStorage.setItem("latestOrder", JSON.stringify(confirmedOrderData));
+    sessionStorage.removeItem(checkoutAddressDraftKey(user?._id));
     dispatch(
       removePurchasedCartItems(order.cart.map((item) => item._id))
     );
